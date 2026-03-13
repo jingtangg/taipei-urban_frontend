@@ -1,0 +1,5 @@
+{
+  "name": "Taipei Urban Planning Verification Platform",
+  "description": "A professional spatial risk verification tool for Taipei City urban planners, focusing on fire safety and narrow alley analysis.",
+  "requestFramePermissions": ["geolocation"]
+}
