@@ -1,9 +1,16 @@
 /**
- * hooks/useMapInit.ts
- * 對應 mapInitMixin.js: initMap() + addMouseControl()
+ * OpenLayers 地圖初始化 Hook
  *
- * Vue mixin 直接 mutate this.map，React hook 改成回傳 mapRef
- * addMouseControl → pointermove 事件 + onMouseMove callback（不用 OL control）
+ * 職責:
+ * - 建立 OpenLayers 地圖實例並綁定到 DOM 容器
+ * - 配置底圖圖層 (電子地圖/衛星影像)
+ * - 建立圖層群組結構供業務邏輯使用
+ * - 處理地圖生命週期與事件監聽
+ *
+ * 設計模式:
+ * - 使用 React Hooks 管理地圖實例生命週期
+ * - 圖層採用 id-based 設計,透過 properties.id 識別與切換
+ * - 底圖切換由外部 props 控制,內部負責 visibility 同步
  */
 
 import { useEffect, useRef } from 'react'
@@ -14,18 +21,33 @@ import LayerGroup from 'ol/layer/Group'
 import { XYZ } from 'ol/source'
 import { defaults as defaultControls } from 'ol/control'
 import { fromLonLat } from 'ol/proj'
-import 'ol/ol.css'
 
-// 台北市中心（對應 mapInitMixin.js center transform 的概念）
+// 台北市中心座標 (台北車站)
 const TAIPEI_CENTER = fromLonLat([121.5654, 25.0330])
 
-// 底圖 URL（Week 3 換成 NLSC WMTS）
-// TODO: 正式換成 https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}
+/**
+ * 底圖來源 URL
+ * TODO: Week 3 換成內政部 NLSC WMTS
+ * https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}
+ */
 const TILE_URLS: Record<'light' | 'satellite', string> = {
   light:     'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 }
 
+/**
+ * 初始化 OpenLayers 地圖
+ *
+ * @param containerRef - React ref 指向地圖容器 DOM 元素
+ * @param baseLayerType - 底圖類型 ('light' 電子地圖 | 'satellite' 衛星影像)
+ * @param onMouseMove - 滑鼠移動事件回調 (選填),回傳座標 {x, y}
+ * @returns mapRef - 地圖實例的 React ref,供外部操作圖層
+ *
+ * @example
+ * const mapRef = useMapInit(containerRef, 'light', (coords) => {
+ *   console.log('滑鼠座標:', coords.x, coords.y)
+ * })
+ */
 export function useMapInit(
   containerRef: React.RefObject<HTMLDivElement | null>,
   baseLayerType: 'light' | 'satellite',
@@ -33,11 +55,11 @@ export function useMapInit(
 ) {
   const mapRef = useRef<Map | null>(null)
 
-  // 對應 mapInitMixin.js: initMap() — 建立 Map + View
   useEffect(() => {
+    // 防止重複初始化
     if (!containerRef.current || mapRef.current) return
 
-    // 建兩個底圖（emap/photo），交由 MapContainer 的 baseLayer effect 切換可見性
+    // 建立兩個底圖圖層,透過 visible 控制顯示
     const emap = new TileLayer({
       source: new XYZ({ url: TILE_URLS.light }),
       visible: baseLayerType !== 'satellite',
@@ -49,11 +71,12 @@ export function useMapInit(
       properties: { id: 'photo' },
     })
 
-    // 對應 mapMixin.js layers_list 的 LayerGroup 結構
+    // 建立業務圖層群組 (空群組,由外部 hooks 填充資料)
     const roadsGroup    = new LayerGroup({ properties: { id: 'roads_map'    } })
     const fireGroup     = new LayerGroup({ properties: { id: 'fire_map'     } })
     const districtGroup = new LayerGroup({ properties: { id: 'district_map' } })
 
+    // 建立地圖實例
     const map = new Map({
       target: containerRef.current,
       layers: [emap, photo, districtGroup, roadsGroup, fireGroup],
@@ -67,19 +90,18 @@ export function useMapInit(
     })
     mapRef.current = map
 
-    // 對應 mapInitMixin.js: addMouseControl()
-    // 原用 OL MousePosition control，這裡改成 pointermove → callback
+    // 選填: 註冊滑鼠移動事件監聽
     if (onMouseMove) {
       map.on('pointermove', (evt) => {
         onMouseMove({ x: evt.coordinate[0], y: evt.coordinate[1] })
       })
     }
 
+    // 清理函數: 元件卸載時移除地圖
     return () => {
       map.setTarget(undefined)
       mapRef.current = null
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerRef])
 
   return mapRef
