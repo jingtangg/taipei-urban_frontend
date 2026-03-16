@@ -1,4 +1,4 @@
-import { District, Road, FireHydrant, FireStation } from './types';
+import { District, Road, FireHydrant, FireStation } from './types/geo';
 
 // Taipei Center: [121.5654, 25.0330]
 
