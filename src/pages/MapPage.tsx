@@ -1,16 +1,7 @@
-/**
- * pages/MapPage.tsx
- * 對應 MapComponent.vue（全端）→ 完整頁面：左側欄 + 地圖 + 右側欄
- * 從 App.tsx 抽出，App.tsx 只剩 <MapPage />
- */
-
 import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import {
-  Terminal, Cpu, Database, Activity,
-  ChevronLeft, ChevronRight, Map as MapIcon, Layers, Maximize,
-} from 'lucide-react'
-import MapContainer, { type MapContainerHandle } from '../components/map/MapContainer'
+import {Terminal, Cpu, Database, Activity, ChevronLeft, ChevronRight, Map as MapIcon, Layers, Maximize} from 'lucide-react'
+import MapView, { type MapViewHandle } from '../components/Map'
 import { DISTRICTS } from '../mockData'
 
 const DISTRICT_NAMES = ['all', ...DISTRICTS.map(d => d.name)]
@@ -19,18 +10,10 @@ const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
   const [current, setCurrent] = useState('')
   const [idx, setIdx] = useState(0)
 
-  // text 變更時重置（否則舊字串殘留）
-  React.useEffect(() => {
-    setCurrent('')
-    setIdx(0)
-  }, [text])
-
+  React.useEffect(() => { setCurrent(''); setIdx(0); }, [text])
   React.useEffect(() => {
     if (idx < text.length) {
-      const t = setTimeout(() => {
-        setCurrent(p => p + text[idx])
-        setIdx(p => p + 1)
-      }, delay)
+      const t = setTimeout(() => {setCurrent(p => p + text[idx]); setIdx(p => p + 1)}, delay)
       return () => clearTimeout(t)
     }
   }, [idx, delay, text])
@@ -41,13 +24,11 @@ const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
 export default function MapPage() {
   const [selectedDistrict, setSelectedDistrict] = useState('all')
   const [baseLayer, setBaseLayer] = useState<'light' | 'satellite'>('light')
-  const [layers, setLayers] = useState({
-    roads: true, hydrants: true, stations: true, districts: true,
-  })
+  const [layers, setLayers] = useState({roads: true, hydrants: true, stations: true, districts: true})
   const [isLeftOpen,  setIsLeftOpen]  = useState(true)
   const [isRightOpen, setIsRightOpen] = useState(true)
-  const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 })
-  const mapRef = useRef<MapContainerHandle>(null)
+  const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標
+  const mapRef = useRef<MapViewHandle>(null)
 
   const toggleLayer = (layer: keyof typeof layers) =>
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
@@ -152,10 +133,10 @@ export default function MapPage() {
         </button>
 
         <div className="w-full h-full opacity-80 grayscale contrast-125">
-          <MapContainer
+          <MapView
             ref={mapRef}
             baseLayer={baseLayer}
-            district={selectedDistrict}
+            selectedDistrict={selectedDistrict}
             layers={layers}
             onMouseMove={c => setCoords(c)}
           />
