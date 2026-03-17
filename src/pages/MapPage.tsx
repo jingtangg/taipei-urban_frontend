@@ -27,7 +27,7 @@ export default function MapPage() {
   const [layers, setLayers] = useState({roads: true, hydrants: true, stations: true, districts: true})
   const [isLeftOpen,  setIsLeftOpen]  = useState(true)
   const [isRightOpen, setIsRightOpen] = useState(true)
-  const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標
+  const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標的 游標位置
   const mapRef = useRef<MapViewHandle>(null)
 
   const toggleLayer = (layer: keyof typeof layers) =>
