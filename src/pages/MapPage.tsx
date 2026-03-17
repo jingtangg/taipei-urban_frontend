@@ -132,7 +132,7 @@ export default function MapPage() {
           {isLeftOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
         </button>
 
-        <div className="w-full h-full opacity-80 grayscale contrast-125">
+        <div className="w-full h-full">
           <MapView
             ref={mapRef}
             baseLayer={baseLayer}

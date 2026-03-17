@@ -60,14 +60,17 @@ export function useMapInit(
     if (!containerRef.current || mapRef.current) return
 
     // 建立兩個底圖圖層,透過 visible 控制顯示
+    // className 供 CSS 單獨對底圖套用灰階濾鏡,不影響業務圖層顏色
     const emap = new TileLayer({
       source: new XYZ({ url: TILE_URLS.light }),
       visible: baseLayerType !== 'satellite',
+      className: 'base-tile-layer',
       properties: { id: 'emap' },
     })
     const photo = new TileLayer({
       source: new XYZ({ url: TILE_URLS.satellite }),
       visible: baseLayerType === 'satellite',
+      className: 'base-tile-layer',
       properties: { id: 'photo' },
     })
 

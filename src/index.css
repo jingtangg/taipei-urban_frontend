@@ -161,13 +161,13 @@ body {
   background: var(--terminal-green);
 }
 
-/* Leaflet Overrides for Terminal */
-.leaflet-container {
+/* OpenLayers Overrides for Terminal */
+.ol-viewport {
   background: #000 !important;
   filter: sepia(100%) hue-rotate(80deg) brightness(0.8) contrast(1.2) invert(100%) hue-rotate(180deg);
 }
 
-.leaflet-popup-content-wrapper {
+.ol-popup {
   background: #000 !important;
   color: var(--terminal-green) !important;
   border: 1px solid var(--terminal-green) !important;
@@ -175,6 +175,7 @@ body {
   box-shadow: 0 0 15px var(--terminal-green-dim) !important;
 }
 
-.leaflet-popup-tip {
-  background: var(--terminal-green) !important;
+/* 底圖灰階效果：只套用於底圖 Tile 圖層，保留道路圖層的顏色 */
+.base-tile-layer {
+  filter: grayscale(1) contrast(1.25) opacity(0.8);
 }
