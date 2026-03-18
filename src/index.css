@@ -164,7 +164,6 @@ body {
 /* OpenLayers Overrides for Terminal */
 .ol-viewport {
   background: #000 !important;
-  filter: sepia(100%) hue-rotate(80deg) brightness(0.8) contrast(1.2) invert(100%) hue-rotate(180deg);
 }
 
 .ol-popup {

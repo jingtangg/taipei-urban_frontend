@@ -107,5 +107,17 @@ export function useMapInit(
     }
   }, [containerRef])
 
+  // 底圖切換: 依 baseLayerType 控制 emap / photo 的可見性
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    const layers = mapRef.current.getLayers().getArray()
+    const emap  = layers.find(l => l.get('id') === 'emap')
+    const photo = layers.find(l => l.get('id') === 'photo')
+
+    emap?.setVisible(baseLayerType === 'light')
+    photo?.setVisible(baseLayerType === 'satellite')
+  }, [baseLayerType])
+
   return mapRef
 }
