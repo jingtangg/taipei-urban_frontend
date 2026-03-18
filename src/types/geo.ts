@@ -79,6 +79,8 @@ export interface District {
   name: string              // 行政區名稱
   area_km2: number          // 面積
   geometry: any             // GeoJSON Polygon 格式
+  narrowDensity?: number    // 窄巷密度 (km/km²)
+  hydrantDensity?: number   // 消防栓密度 (/km²)
 }
 
 /**

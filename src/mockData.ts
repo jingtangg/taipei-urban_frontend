@@ -1,8 +1,13 @@
 import { District, Road, FireHydrant, FireStation } from './types/geo';
 
-// Taipei Center: [121.5654, 25.0330]
+// ========================================
+// 行政區資料與計算
+// ========================================
 
-export const DISTRICTS: District[] = [
+/**
+ * 行政區基礎資料
+ */
+const DISTRICTS_BASE: District[] = [
   { id: '1', name: '大同區', area_km2: 5.68, geometry: { type: 'Polygon', coordinates: [[[121.50, 25.05], [121.52, 25.05], [121.52, 25.07], [121.50, 25.07], [121.50, 25.05]]] } },
   { id: '2', name: '萬華區', area_km2: 8.85, geometry: { type: 'Polygon', coordinates: [[[121.49, 25.02], [121.51, 25.02], [121.51, 25.05], [121.49, 25.05], [121.49, 25.02]]] } },
   { id: '3', name: '中正區', area_km2: 7.61, geometry: { type: 'Polygon', coordinates: [[[121.50, 25.02], [121.53, 25.02], [121.53, 25.04], [121.50, 25.04], [121.50, 25.02]]] } },
@@ -17,6 +22,35 @@ export const DISTRICTS: District[] = [
   { id: '12', name: '北投區', area_km2: 56.82, geometry: { type: 'Polygon', coordinates: [[[121.48, 25.11], [121.55, 25.11], [121.55, 25.19], [121.48, 25.19], [121.48, 25.11]]] } },
 ];
 
+/**
+ * 計算每個行政區的窄巷密度 (km/km²) 和消防栓密度 (/km²)
+ *
+ * 依賴：ROADS, HYDRANTS
+ * 必須在這兩個資料定義後才能執行
+ */
+function calculateDistrictMetrics(): District[] {
+  return DISTRICTS_BASE.map(district => {
+    // 計算窄巷總長度 (m)
+    const narrowRoads = ROADS.filter(r => r.district === district.name && r.category === 'narrow')
+    const narrowRoadLength = narrowRoads.reduce((sum, r) => sum + r.length_m, 0)
+    const narrowDensity = (narrowRoadLength / 1000) / district.area_km2 // km/km²
+
+    // 計算消防栓數量
+    const hydrantCount = HYDRANTS.filter(h => h.district === district.name).length
+    const hydrantDensity = hydrantCount / district.area_km2 // /km²
+
+    return {
+      ...district,
+      narrowDensity: parseFloat(narrowDensity.toFixed(2)),
+      hydrantDensity: parseFloat(hydrantDensity.toFixed(1)),
+    }
+  })
+}
+
+// ========================================
+// 道路資料
+// ========================================
+
 export const ROADS: Road[] = [
   { id: 'r1', name: '西園路一段', district: '萬華區', planned_width: 8, measured_width: 7.5, length_m: 500, category: 'mid', geometry: { type: 'LineString', coordinates: [[121.498, 25.035], [121.502, 25.038]] } },
   { id: 'r2', name: '廣州街窄巷', district: '萬華區', planned_width: 3, measured_width: 2.8, length_m: 200, category: 'narrow', geometry: { type: 'LineString', coordinates: [[121.500, 25.036], [121.501, 25.034]] } },
@@ -27,6 +61,10 @@ export const ROADS: Road[] = [
   { id: 'r7', name: '迪化街窄巷', district: '大同區', planned_width: 3.2, measured_width: 3.0, length_m: 450, category: 'narrow', geometry: { type: 'LineString', coordinates: [[121.510, 25.055], [121.512, 25.062]] } },
   { id: 'r8', name: '長安東路', district: '中山區', planned_width: 20, measured_width: 19.5, length_m: 800, category: 'wide', geometry: { type: 'LineString', coordinates: [[121.530, 25.048], [121.545, 25.048]] } },
 ];
+
+// ========================================
+// 消防設施資料
+// ========================================
 
 export const HYDRANTS: FireHydrant[] = [
   { id: 'h1', type: 'underground', district: '萬華區', geometry: { type: 'Point', coordinates: [121.500, 25.037] } },
@@ -44,3 +82,17 @@ export const STATIONS: FireStation[] = [
   { id: 's3', name: '大安分隊', address: '台北市大安區復興南路二段92號', district: '大安區', geometry: { type: 'Point', coordinates: [121.543, 25.031] } },
   { id: 's4', name: '中山分隊', address: '台北市中山區長安東路二段', district: '中山區', geometry: { type: 'Point', coordinates: [121.535, 25.048] } },
 ];
+
+// ========================================
+// 最終計算結果
+// ========================================
+
+/**
+ * 行政區資料（含計算後的密度指標）
+ *
+ * 此資料在模組載入時自動計算，包含：
+ * - 基礎行政區資料
+ * - 窄巷密度 (narrowDensity)
+ * - 消防栓密度 (hydrantDensity)
+ */
+export const DISTRICTS: District[] = calculateDistrictMetrics();

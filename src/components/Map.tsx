@@ -17,9 +17,10 @@ import { Point, LineString, Polygon } from 'ol/geom'
 
 // Hooks
 import { useMapInit } from '../hooks/useMapInit'
-import { useDistrictLayer } from '../hooks/useDistrictLayer'
+import { useDistrictLayer, DETAIL_ZOOM_THRESHOLD } from '../hooks/useDistrictLayer'
 import { useRoadLayer } from '../hooks/useRoadLayer'
 import { useFireLayers } from '../hooks/useFireLayers'
+import { useZoomLevel } from '../hooks/useZoomLevel'
 
 export interface MapViewHandle {
   zoomToTaipei: () => void
@@ -35,16 +36,20 @@ interface MapViewProps {
     districts: boolean
   }
   onMouseMove?: (coords: { x: number; y: number }) => void
+  onDistrictClick?: (districtName: string) => void
 }
 
 const MapView = forwardRef<MapViewHandle, MapViewProps>(
-  ({ selectedDistrict, baseLayer, layers, onMouseMove }, ref) => {
+  ({ selectedDistrict, baseLayer, layers, onMouseMove, onDistrictClick }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const popupRef = useRef<HTMLDivElement>(null)
     const overlayRef = useRef<Overlay | null>(null)
 
     // ========== 地圖初始化 ==========
     const mapRef = useMapInit(containerRef, baseLayer, onMouseMove)
+
+    // ========== 監聽 zoom level 變化 ==========
+    const currentZoom = useZoomLevel(mapRef.current)
 
     // ========== 各功能圖層 ==========
     useDistrictLayer(mapRef.current, layers.districts, selectedDistrict)
@@ -91,7 +96,21 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
 
       const handleClick = (evt: any) => {
         const map = mapRef.current!
-        const feature = map.forEachFeatureAtPixel(evt.pixel, (f) => f)
+
+        // 收集點擊位置的所有 features
+        const features: any[] = []
+        map.forEachFeatureAtPixel(evt.pixel, (f) => {
+          features.push(f)
+        })
+
+        // 過濾掉行政區相關圖層，優先處理其他圖層（道路、消防栓、消防局）
+        const nonDistrictFeature = features.find(f => {
+          const type = f.getProperties().type
+          // 如果這東西不是區域邊界，也不是標記，那就是我要的資料
+          return type !== 'district_boundary' && type !== 'district_marker'
+        })
+        // 如果有抓到 道路、消防栓、消防局 先取他，如果都沒有幫我取features[0](行政區)
+        const feature = nonDistrictFeature || features[0]
 
         if (feature) {
           const props = feature.getProperties()
@@ -99,16 +118,32 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
 
           let popupContent = ''
 
-          // 行政區 Popup
-          if (props.type === 'district') {
-            popupContent = createPopupHTML(
-              '#00ff41',
-              `區域編號: ${props.name}`,
-              `
-                <p>> 區域面積: ${props.area_km2} KM²</p>
-                <p>> 安全狀態: ${props.status || '正常'}</p>
-              `
-            )
+          // A.行政區中心點標記
+          if (props.type === 'district_marker') {
+            // 直接觸發 drill down，不顯示 popup
+            if (onDistrictClick) {
+              onDistrictClick(props.name)
+            }
+          }
+
+          // B.處理行政區邊界
+          else if (props.type === 'district_boundary') {
+            // 第一層（zoom < 15）：點邊界 → 放大該區域
+            if (currentZoom < DETAIL_ZOOM_THRESHOLD) {
+              if (onDistrictClick) {
+                onDistrictClick(props.name)
+              }
+            }
+            // 第二層（zoom ≥ 15）：點邊界 → 顯示「您點擊的位置於 XX 範圍」popup
+            else {
+              popupContent = createPopupHTML(
+                '#00ff41',
+                `${props.name} 範圍`,
+                `
+                  <p>> 您點擊的位置於${props.name}範圍</p>
+                `
+              )
+            }
           }
 
           // 道路 Popup
@@ -166,6 +201,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
             }
 
             overlayRef.current.setPosition(coord)
+          } else if (!popupContent) {
+            overlayRef.current?.setPosition(undefined)
           }
         } else {
           // 點擊空白處關閉 Popup
@@ -178,7 +215,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
       return () => {
         mapRef.current?.un('click', handleClick)
       }
-    }, [mapRef.current])
+    }, [mapRef.current, currentZoom])
 
     // ========== 暴露方法給父元件 ==========
     useImperativeHandle(ref, () => ({

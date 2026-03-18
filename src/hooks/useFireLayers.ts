@@ -17,6 +17,8 @@ import { Point } from 'ol/geom'
 import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
 import { HYDRANTS, STATIONS } from '../mockData'
+import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
+import { useZoomLevel } from './useZoomLevel'
 
 interface UseFireLayersOptions {
   showHydrants: boolean   // 是否顯示消防栓
@@ -35,6 +37,7 @@ export function useFireLayers(
 ) {
   const hydrantLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const stationLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
+  const currentZoom = useZoomLevel(map)
 
   // 建立並加入圖層
   useEffect(() => {
@@ -73,8 +76,10 @@ export function useFireLayers(
         }),
       }),
       properties: { name: '消防栓' },
+      visible: false, // 初始隱藏，等 zoom 監聽啟動後再決定
     })
 
+    // ========== 第一階段：圖層創建 ==========
     // ========== 建立消防局圖層 ==========
     const stationFeatures = STATIONS.map(s => {
       const point = new Point(
@@ -98,6 +103,7 @@ export function useFireLayers(
         }),
       }),
       properties: { name: '消防局' },
+      visible: false, // 初始隱藏，等 zoom 監聽啟動後再決定
     })
 
     // 加入 fireGroup
@@ -114,19 +120,25 @@ export function useFireLayers(
     }
   }, [map])
 
-  // 控制消防栓顯示/隱藏
+  // ========== 第二階段：動態控制 ==========
+  // 控制消防栓顯示/隱藏：基於 zoom level
+  // Zoom < 15: 隱藏（總覽層）, Zoom ≥ 15: 顯示（詳細層）
   useEffect(() => {
     if (hydrantLayerRef.current) {
-      hydrantLayerRef.current.setVisible(options.showHydrants)
+      const shouldShow = options.showHydrants && currentZoom >= DETAIL_ZOOM_THRESHOLD
+      hydrantLayerRef.current.setVisible(shouldShow)
     }
-  }, [options.showHydrants])
+  }, [options.showHydrants, currentZoom])
 
-  // 控制消防局顯示/隱藏
+  // 控制消防局顯示/隱藏：基於 zoom level
+  // Zoom < 15: 隱藏（總覽層）
+  // Zoom ≥ 15: 顯示（詳細層）
   useEffect(() => {
     if (stationLayerRef.current) {
-      stationLayerRef.current.setVisible(options.showStations)
+      const shouldShow = options.showStations && currentZoom >= DETAIL_ZOOM_THRESHOLD
+      stationLayerRef.current.setVisible(shouldShow)
     }
-  }, [options.showStations])
+  }, [options.showStations, currentZoom])
 
   return { hydrantLayerRef, stationLayerRef }
 }

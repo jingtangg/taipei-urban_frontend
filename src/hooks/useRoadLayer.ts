@@ -18,6 +18,8 @@ import { Style, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
 import { ROADS } from '../mockData'
 import { getRoadWidthClass, ROAD_WIDTH_COLORS } from '../types/geo'
+import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
+import { useZoomLevel } from './useZoomLevel'
 
 /**
  * 道路圖層管理 Hook
@@ -31,6 +33,7 @@ export function useRoadLayer(
   selectedDistrict: string = 'all'
 ) {
   const layerRef = useRef<VectorLayer<VectorSource> | null>(null)
+  const currentZoom = useZoomLevel(map)
 
   // 建立並加入圖層
   useEffect(() => {
@@ -59,6 +62,7 @@ export function useRoadLayer(
       })
     })
 
+    // ========== 第一階段：圖層創建 ==========
     // 建立圖層 (使用動態樣式函數)
     const layer = new VectorLayer({
       source: new VectorSource({ features }),
@@ -75,6 +79,7 @@ export function useRoadLayer(
         })
       },
       properties: { name: '道路寬度' },
+      visible: false,
     })
 
     layerRef.current = layer
@@ -86,12 +91,15 @@ export function useRoadLayer(
     }
   }, [map])
 
-  // 控制顯示/隱藏
+  // ========== 第二階段：動態控制 ==========
+  // 控制顯示/隱藏：基於 zoom level
+  // Zoom < 15: 隱藏（總覽層）, Zoom ≥ 15: 顯示（詳細層）
   useEffect(() => {
     if (layerRef.current) {
-      layerRef.current.setVisible(visible)
+      const shouldShow = visible && currentZoom >= DETAIL_ZOOM_THRESHOLD
+      layerRef.current.setVisible(shouldShow)
     }
-  }, [visible])
+  }, [visible, currentZoom])
 
   // TODO: 支援按行政區篩選 (目前顯示全部道路)
   // 之後串接 API 時,改為透過 selectedDistrict 參數呼叫 getRoads(district)

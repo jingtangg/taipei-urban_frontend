@@ -139,6 +139,7 @@ export default function MapPage() {
             selectedDistrict={selectedDistrict}
             layers={layers}
             onMouseMove={c => setCoords(c)}
+            onDistrictClick={districtName => setSelectedDistrict(districtName)}
           />
         </div>
 
