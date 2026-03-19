@@ -11,8 +11,8 @@
  * - 使用泛型 <T> 確保回傳資料符合對應的 FeatureProps 型別
  */
 
-import { dataQuery } from './api'
-import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps, DistrictStats} from '../types/geo'
+import { apiQuery } from './api'
+import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps, DistrictStats, District} from '../types/geo'
 
 /**
  * 取得道路資料
@@ -20,8 +20,8 @@ import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps,
  * @returns Promise<RoadFeatureProps[]> 道路圖徵陣列,包含寬度、名稱、幾何資料
  */
 export const getRoads = (district?: string) =>
-  dataQuery<RoadFeatureProps>(
-    '/api/roads',
+  apiQuery<RoadFeatureProps[]>(
+    '/roads',
     { district },
     '無道路資料，請確認查詢資訊是否正確',
     'GET',
@@ -33,8 +33,8 @@ export const getRoads = (district?: string) =>
  * @returns Promise<FireHydrantFeatureProps[]> 消防栓圖徵陣列,包含位置、狀態等資訊
  */
 export const getFireHydrants = (district?: string) =>
-  dataQuery<FireHydrantFeatureProps>(
-    '/api/fire_hydrants',
+  apiQuery<FireHydrantFeatureProps[]>(
+    '/fire_hydrants',
     { district },
     '無消防栓資料，請確認查詢資訊是否正確',
     'GET',
@@ -46,8 +46,8 @@ export const getFireHydrants = (district?: string) =>
  * @returns Promise<FireStationFeatureProps[]> 消防隊圖徵陣列,包含隊名、位置、轄區資訊
  */
 export const getFireStations = (district?: string) =>
-  dataQuery<FireStationFeatureProps>(
-    '/api/fire_stations',
+  apiQuery<FireStationFeatureProps[]>(
+    '/fire_stations',
     { district },
     '無消防隊資料，請確認查詢資訊是否正確',
     'GET',
@@ -58,9 +58,21 @@ export const getFireStations = (district?: string) =>
  * @returns Promise<DistrictStats[]> 各行政區的防災風險統計指標
  */
 export const getDistrictStats = () =>
-  dataQuery<DistrictStats>(
-    '/api/district_stats',
+  apiQuery<DistrictStats[]>(
+    '/district_stats',
     {},
     '無統計資料，請確認系統狀態是否正常',
+    'GET',
+  )
+
+/**
+ * 取得行政區資料
+ * @returns Promise<District[]> 行政區邊界與統計資料
+ */
+export const getDistricts = () =>
+  apiQuery<District[]>(
+    '/districts',
+    {},
+    '無法取得行政區資料',
     'GET',
   )

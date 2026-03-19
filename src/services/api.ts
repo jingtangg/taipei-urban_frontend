@@ -24,44 +24,64 @@ interface ApiResponse<T> {
 }
 
 /**
+ * GeoJSON API 回傳格式
+ * 用於 /districts/geojson 等回傳 GeoJSON 的端點
+ */
+interface GeoJsonApiResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+}
+
+/**
  * Axios HTTP 客戶端實例
  * 預設連接本地開發伺服器,正式環境需修改 baseURL
  */
-const client = axios.create({
-  baseURL: 'http://127.0.0.1:8000'
+export const client = axios.create({
+  baseURL: 'http://localhost:8000/api',
+  headers: {
+  'Content-Type': 'application/json',
+  },
 })
 
 /**
  * 通用 API 查詢函數
+ * 自動適配 tableList 格式（一般列表 API）和完整 data 格式（如 GeoJSON）
  *
- * @template T - 回傳資料的型別,需對應 types/geo.ts 的 FeatureProps
- * @param url - API 端點路徑,例如 '/api/roads'
- * @param params - 請求參數物件,GET 時轉為 query string,POST 時放在 body
- * @param errorMsg - 統一的錯誤訊息,避免暴露系統細節給使用者
- * @param method - HTTP 方法,預設 POST
- * @returns Promise<T[]> 成功時回傳型別安全的資料陣列
+ * @template T - 回傳資料的型別（可以是陣列或物件）
+ * @param url - API 端點路徑，例如 '/districts' 或 '/roads'
+ * @param params - 請求參數物件，GET 時轉為 query string，POST 時放在 body
+ * @param errorMsg - 統一的錯誤訊息，避免暴露系統細節給使用者
+ * @param method - HTTP 方法，預設 GET
+ * @returns Promise<T> 成功時回傳型別安全的資料
  * @throws Error 失敗時拋出包含 errorMsg 的錯誤
  *
  * 錯誤處理策略:
- * - 開發環境: console.error 顯示詳細錯誤,方便除錯
- * - 正式環境: 只拋出 errorMsg,保護系統資訊安全
+ * - 開發環境: console.error 顯示詳細錯誤，方便除錯
+ * - 正式環境: 只拋出 errorMsg，保護系統資訊安全
+ *
+ * 自動判斷邏輯:
+ * - 如果 response.data.data.tableList 存在 → 回傳 tableList
+ * - 否則 → 回傳整個 response.data.data
  */
-export async function dataQuery<T>(
+export async function apiQuery<T>(
   url: string,
-  params: object,
+  params: object = {},
   errorMsg: string,
-  method: 'POST' | 'GET' = 'POST',
-): Promise<T[]> {
+  method: 'POST' | 'GET' = 'GET',
+): Promise<T> {
   try {
     const response = method === 'GET'
-      ? await client.get<ApiResponse<T>>(url, { params })
-      : await client.post<ApiResponse<T>>(url, params)
+      ? await client.get(url, { params })
+      : await client.post(url, params)
 
     const resData = response.data
+
     if (resData.success) {
-      const list = resData.data?.tableList
-      return Array.isArray(list) ? list : []
+      // 自動適配：有 tableList 就回傳 tableList，否則回傳整個 data
+      return resData.data.tableList ?? resData.data
     }
+
     throw new Error(errorMsg)
   } catch (error: any) {
     if (import.meta.env.DEV) {

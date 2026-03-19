@@ -1,10 +1,9 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {Terminal, Cpu, Database, Activity, ChevronLeft, ChevronRight, Map as MapIcon, Layers, Maximize} from 'lucide-react'
 import MapView, { type MapViewHandle } from '../components/Map'
-import { DISTRICTS } from '../mockData'
-
-const DISTRICT_NAMES = ['all', ...DISTRICTS.map(d => d.name)]
+import { getDistricts } from '../services/urbanApi'
+import type { District } from '../types/geo'
 
 const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
   const [current, setCurrent] = useState('')
@@ -29,6 +28,12 @@ export default function MapPage() {
   const [isRightOpen, setIsRightOpen] = useState(true)
   const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標的 游標位置
   const mapRef = useRef<MapViewHandle>(null)
+  const [districts, setDistricts] = useState<District[]>([])
+
+  // 載入行政區資料
+  useEffect(() => {
+    getDistricts().then(setDistricts).catch(console.error)
+  }, [])
 
   const toggleLayer = (layer: keyof typeof layers) =>
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
@@ -66,9 +71,12 @@ export default function MapPage() {
                     onChange={e => setSelectedDistrict(e.target.value)}
                     className="w-full bg-black border border-[#00ff41] text-[#00ff41] text-xs px-3 py-2 outline-none appearance-none cursor-pointer hover:bg-[#00ff41]/10 transition-colors font-mono"
                   >
-                    {DISTRICT_NAMES.map(d => (
-                      <option key={d} value={d} className="bg-black text-[#00ff41]">
-                        {d === 'all' ? '> 台北市全區' : `> ${d}`}
+                    <option value="all" className="bg-black text-[#00ff41]">
+                      {'> 台北市全區'}
+                    </option>
+                    {districts.map(d => (
+                      <option key={d.id} value={d.name} className="bg-black text-[#00ff41]">
+                        {`> ${d.name}`}
                       </option>
                     ))}
                   </select>

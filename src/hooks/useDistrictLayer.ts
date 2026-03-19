@@ -8,7 +8,7 @@
  * - 提供行政區資料的視覺化樣式
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Map from 'ol/Map'
 import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
@@ -17,9 +17,10 @@ import { Feature } from 'ol'
 import { Polygon, Point } from 'ol/geom'
 import { Style, Stroke, Fill, Circle, Text } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
-import { DISTRICTS } from '../mockData'
 import { getCenter } from 'ol/extent'
 import { useZoomLevel } from './useZoomLevel'
+import { getDistricts } from '../services/urbanApi'
+import type { District } from '../types/geo'
 
 const TAIPEI_CENTER = fromLonLat([121.5654, 25.0330])
 
@@ -98,10 +99,16 @@ export function useDistrictLayer(
   const boundaryLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const markerLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const currentZoom = useZoomLevel(map)
+  const [districts, setDistricts] = useState<District[]>([])
+
+  // 載入行政區資料
+  useEffect(() => {
+    getDistricts().then(setDistricts).catch(console.error)
+  }, [])
 
   // 建立並加入圖層
   useEffect(() => {
-    if (!map) return
+    if (!map || districts.length === 0) return
 
     // 找到 districtGroup 容器
     const districtGroup = map.getLayers().getArray().find(
@@ -114,7 +121,7 @@ export function useDistrictLayer(
     }
 
     // 建立行政區邊界 Features
-    const boundaryFeatures = DISTRICTS.map(d => {
+    const boundaryFeatures = districts.map(d => {
       const coords = d.geometry.coordinates[0].map(c => fromLonLat([c[0], c[1]]))
       const polygon = new Polygon([coords])
       return new Feature({
@@ -126,7 +133,7 @@ export function useDistrictLayer(
     })
 
     // 建立中心點標記 Features
-    const markerFeatures = DISTRICTS.map(d => {
+    const markerFeatures = districts.map(d => {
       const coords = d.geometry.coordinates[0].map(c => fromLonLat([c[0], c[1]]))
       const polygon = new Polygon([coords])
       const extent = polygon.getExtent()
@@ -204,7 +211,7 @@ export function useDistrictLayer(
       boundaryLayerRef.current = null
       markerLayerRef.current = null
     }
-  }, [map])
+  }, [map, districts])
 
   // 控制邊界顯示/隱藏
   useEffect(() => {
@@ -234,7 +241,7 @@ export function useDistrictLayer(
       })
     } else {
       // 縮放到特定行政區（詳細層，固定 zoom 15）
-      const district = DISTRICTS.find(d => d.name === selectedDistrict)
+      const district = districts.find(d => d.name === selectedDistrict)
       if (district) {
         const coords = district.geometry.coordinates[0].map(c =>
           fromLonLat([c[0], c[1]])
@@ -251,7 +258,7 @@ export function useDistrictLayer(
         })
       }
     }
-  }, [map, selectedDistrict])
+  }, [map, selectedDistrict, districts])
 
   return { boundaryLayerRef, markerLayerRef }
 }
