@@ -64,24 +64,31 @@ export interface DistrictStats {
   service_radius_m: number          // 消防栓理論服務半徑 (公尺)
 }
 
+/**
+ * 行政區基本資料
+ * 對應後端 /api/districts，用於下拉選單、列表等輕量查詢
+ */
+export interface DistrictBasic {
+  id: string
+  name: string       // 行政區名稱
+  area_km2: number   // 行政區面積 (平方公里)
+}
+
+/**
+ * 行政區完整資料
+ * 對應後端 /api/districts/geojson，用於地圖圖層顯示
+ */
+export interface District extends DistrictBasic {
+  geometry: any             // GeoJSON Polygon/MultiPolygon 格式
+  narrowDensity: number     // 窄巷密度 (km/km²)
+  hydrantDensity: number    // 消防栓密度 (/km²)
+}
+
 // ────────────────────────────────────────────────────────────
 // UI 層型別 - 前端 Mock 資料格式 (待移除)
 // ────────────────────────────────────────────────────────────
 // 注意: 以下型別僅供開發階段 Mock 資料使用
 // 串接後端 API 後,應統一使用上方的 API 層型別
-
-/**
- * 行政區資料 (Mock)
- * 包含完整的 GeoJSON 幾何資料
- */
-export interface District {
-  id: string
-  name: string              // 行政區名稱
-  area_km2: number          // 面積
-  geometry: any             // GeoJSON Polygon 格式
-  narrowDensity?: number    // 窄巷密度 (km/km²)
-  hydrantDensity?: number   // 消防栓密度 (/km²)
-}
 
 /**
  * 道路資料 (Mock)

@@ -12,7 +12,7 @@
  */
 
 import { apiQuery } from './api'
-import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps, DistrictStats, District} from '../types/geo'
+import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps, DistrictStats, District, DistrictBasic} from '../types/geo'
 
 /**
  * 取得道路資料
@@ -66,12 +66,24 @@ export const getDistrictStats = () =>
   )
 
 /**
- * 取得行政區資料
- * @returns Promise<District[]> 行政區邊界與統計資料
+ * 取得行政區基本資料（不含幾何）
+ * 用於下拉選單、統計列表等輕量查詢
+ */
+export const getDistrictList = () =>
+  apiQuery<DistrictBasic[]>(
+    '/districts',
+    {},
+    '無法取得行政區列表',
+    'GET',
+  )
+
+/**
+ * 取得行政區完整資料（含幾何邊界）
+ * 用於地圖圖層顯示
  */
 export const getDistricts = () =>
   apiQuery<District[]>(
-    '/districts',
+    '/districts/geojson',
     {},
     '無法取得行政區資料',
     'GET',
