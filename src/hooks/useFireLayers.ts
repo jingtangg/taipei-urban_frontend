@@ -16,10 +16,9 @@ import { Feature } from 'ol'
 import { Point } from 'ol/geom'
 import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
-import { HYDRANTS } from '../mockData'
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
-import { getFireStations } from '../services/urbanApi'
+import { getFireStations, getFireHydrants } from '../services/urbanApi'
 
 interface UseFireLayersOptions {
   showHydrants: boolean   // 是否顯示消防栓
@@ -40,15 +39,17 @@ export function useFireLayers(
   const stationLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const currentZoom = useZoomLevel(map)
   const [stations, setStations] = useState<any[]>([])
+  const [hydrants, setHydrants] = useState<any[]>([])
 
-  // 載入消防隊資料
+  // 載入消防隊與消防栓資料
   useEffect(() => {
     getFireStations().then(setStations).catch(console.error)
+    getFireHydrants().then(setHydrants).catch(console.error)
   }, [])
 
   // 建立並加入圖層
   useEffect(() => {
-    if (!map || stations.length === 0) return
+    if (!map || stations.length === 0 || hydrants.length === 0) return
 
     // 找到 fireGroup 容器
     const fireGroup = map.getLayers().getArray().find(
@@ -61,7 +62,7 @@ export function useFireLayers(
     }
 
     // ========== 建立消防栓圖層 ==========
-    const hydrantFeatures = HYDRANTS.map(h => {
+    const hydrantFeatures = hydrants.map(h => {
       const point = new Point(
         fromLonLat([h.geometry.coordinates[0], h.geometry.coordinates[1]])
       )
@@ -125,7 +126,7 @@ export function useFireLayers(
       hydrantLayerRef.current = null
       stationLayerRef.current = null
     }
-  }, [map, stations])
+  }, [map, stations, hydrants])
 
   // ========== 第二階段：動態控制 ==========
   // 控制消防栓顯示/隱藏：基於 zoom level
