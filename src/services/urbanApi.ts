@@ -47,7 +47,7 @@ export const getFireHydrants = (district?: string) =>
  */
 export const getFireStations = (district?: string) =>
   apiQuery<FireStationFeatureProps[]>(
-    '/fire_stations',
+    '/fire-stations',
     { district },
     '無消防隊資料，請確認查詢資訊是否正確',
     'GET',

@@ -7,7 +7,7 @@
  * - 支援分別控制兩個子圖層的顯示/隱藏
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Map from 'ol/Map'
 import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
@@ -16,9 +16,10 @@ import { Feature } from 'ol'
 import { Point } from 'ol/geom'
 import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
-import { HYDRANTS, STATIONS } from '../mockData'
+import { HYDRANTS } from '../mockData'
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
+import { getFireStations } from '../services/urbanApi'
 
 interface UseFireLayersOptions {
   showHydrants: boolean   // 是否顯示消防栓
@@ -38,10 +39,16 @@ export function useFireLayers(
   const hydrantLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const stationLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const currentZoom = useZoomLevel(map)
+  const [stations, setStations] = useState<any[]>([])
+
+  // 載入消防隊資料
+  useEffect(() => {
+    getFireStations().then(setStations).catch(console.error)
+  }, [])
 
   // 建立並加入圖層
   useEffect(() => {
-    if (!map) return
+    if (!map || stations.length === 0) return
 
     // 找到 fireGroup 容器
     const fireGroup = map.getLayers().getArray().find(
@@ -81,7 +88,7 @@ export function useFireLayers(
 
     // ========== 第一階段：圖層創建 ==========
     // ========== 建立消防局圖層 ==========
-    const stationFeatures = STATIONS.map(s => {
+    const stationFeatures = stations.map(s => {
       const point = new Point(
         fromLonLat([s.geometry.coordinates[0], s.geometry.coordinates[1]])
       )
@@ -118,7 +125,7 @@ export function useFireLayers(
       hydrantLayerRef.current = null
       stationLayerRef.current = null
     }
-  }, [map])
+  }, [map, stations])
 
   // ========== 第二階段：動態控制 ==========
   // 控制消防栓顯示/隱藏：基於 zoom level
