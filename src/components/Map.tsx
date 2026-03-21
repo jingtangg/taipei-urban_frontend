@@ -11,7 +11,7 @@
  * - useFireLayers: 消防設施圖層
  */
 
-import React, { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
+import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
 import Overlay from 'ol/Overlay'
 import { Point, LineString, Polygon } from 'ol/geom'
 
@@ -148,12 +148,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
 
           // 道路 Popup
           else if (props.type === 'road') {
+            const statusMap: Record<string, { label: string; description: string }> = {
+              narrow: { label: '無法通行',   description: '消防車無法進入' },
+              mid:    { label: '有限通行',   description: '僅小型消防車可進入' },
+              wide:   { label: '正常通行',   description: '消防車可順利進入' },
+            }
+            const status = statusMap[props.width_category] ?? statusMap.wide
             popupContent = createPopupHTML(
               '#00ff41',
-              `道路名稱: ${props.name || '未命名'}`,
+              `計畫路寬: ${props.road_width}`,
               `
-                <p>> 規劃寬度: ${props.planned_width}M</p>
-                <p>> 運行狀態: ${props.planned_width <= 3.5 ? '限縮通行' : '正常通行'}</p>
+                <p>> 寬度: ${props.width_m}m</p>
+                <p>> 通行狀態: ${status.label}</p>
+                <p>> ${status.description}</p>
               `
             )
           }

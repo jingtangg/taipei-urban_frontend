@@ -23,7 +23,7 @@ import { getFireStations, getFireHydrants } from '../services/urbanApi'
 interface UseFireLayersOptions {
   showHydrants: boolean   // 是否顯示消防栓
   showStations: boolean   // 是否顯示消防局
-  district?: string       // 行政區篩選 (暫未使用)
+  district?: string       // 行政區篩選，'all' 或 undefined 表示全部
 }
 
 /**
@@ -41,11 +41,12 @@ export function useFireLayers(
   const [stations, setStations] = useState<any[]>([])
   const [hydrants, setHydrants] = useState<any[]>([])
 
-  // 載入消防隊與消防栓資料
+  // 載入消防隊與消防栓資料，district 改變時重新 fetch
   useEffect(() => {
-    getFireStations().then(setStations).catch(console.error)
-    getFireHydrants().then(setHydrants).catch(console.error)
-  }, [])
+    const district = options.district === 'all' ? undefined : options.district
+    getFireStations(district).then(setStations).catch(console.error)
+    getFireHydrants(district).then(setHydrants).catch(console.error)
+  }, [options.district])
 
   // 建立並加入圖層
   useEffect(() => {
@@ -78,9 +79,9 @@ export function useFireLayers(
       source: new VectorSource({ features: hydrantFeatures }),
       style: new Style({
         image: new CircleStyle({
-          radius: 6,
-          fill: new Fill({ color: '#00ff41' }),
-          stroke: new Stroke({ color: '#00ff41', width: 2 }),
+          radius: 5,
+          fill: new Fill({ color: '#00e5ff' }),
+          stroke: new Stroke({ color: '#ffffff', width: 1.5 }),
         }),
       }),
       properties: { name: '消防栓' },
@@ -105,9 +106,9 @@ export function useFireLayers(
       source: new VectorSource({ features: stationFeatures }),
       style: new Style({
         image: new CircleStyle({
-          radius: 8,
-          fill: new Fill({ color: '#ff4444' }),
-          stroke: new Stroke({ color: '#ff4444', width: 2 }),
+          radius: 10,
+          fill: new Fill({ color: '#ffffff' }),
+          stroke: new Stroke({ color: '#ff4444', width: 3 }),
         }),
       }),
       properties: { name: '消防局' },

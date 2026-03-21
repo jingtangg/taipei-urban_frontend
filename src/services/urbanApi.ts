@@ -21,7 +21,7 @@ import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps,
  */
 export const getRoads = (district?: string) =>
   apiQuery<RoadFeatureProps[]>(
-    '/roads',
+    '/roads/planned',
     { district },
     '無道路資料，請確認查詢資訊是否正確',
     'GET',

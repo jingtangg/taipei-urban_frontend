@@ -5,11 +5,6 @@
  * - 定義所有地圖圖層的資料結構
  * - 確保前端與後端 API 的資料格式一致性
  * - 提供型別安全的地理資訊處理
- *
- * 架構說明:
- * - API 層型別: 對應後端 Laravel API 回傳格式 (RoadFeatureProps 等)
- * - UI 層型別: 前端 Mock 資料格式,串接 API 後將被移除 (Road 等)
- * - 工具函數: 提供資料分類與樣式計算功能
  */
 
 // ────────────────────────────────────────────────────────────
@@ -18,14 +13,14 @@
 
 /**
  * 道路圖徵屬性
- * 對應後端 roads 資料表結構
+ * 對應後端 roads_planned 資料表結構
  */
 export interface RoadFeatureProps {
-  id: number
-  road_width: number       // 道路寬度,單位:公尺 (用於計算窄巷風險)
-  road_name?: string       // 道路名稱,可能為空
-  district: string         // 所屬行政區
-  road_type?: string       // 道路類型 (主要道路/次要道路/巷弄等)
+  id: string
+  road_width: string                          // 原始計畫路寬字串，如 "8M"
+  width_m: number                             // 解析後的數值，如 8.0
+  width_category: 'narrow' | 'mid' | 'wide'  // 寬度分級
+  geometry: any                               // GeoJSON LineString
 }
 
 /**
@@ -82,68 +77,6 @@ export interface District extends DistrictBasic {
   geometry: any             // GeoJSON Polygon/MultiPolygon 格式
   narrowDensity: number     // 窄巷密度 (km/km²)
   hydrantDensity: number    // 消防栓密度 (/km²)
-}
-
-// ────────────────────────────────────────────────────────────
-// UI 層型別 - 前端 Mock 資料格式 (待移除)
-// ────────────────────────────────────────────────────────────
-// 注意: 以下型別僅供開發階段 Mock 資料使用
-// 串接後端 API 後,應統一使用上方的 API 層型別
-
-/**
- * 道路資料 (Mock)
- * 與 RoadFeatureProps 的差異:
- * - ID 為字串 (Mock 資料慣例)
- * - 包含計畫寬度與實測寬度兩個欄位
- * - 有前端計算的 category 分類欄位
- */
-export interface Road {
-  id: string
-  name: string
-  district: string
-  planned_width: number     // 計畫寬度 (都市計畫)
-  measured_width: number    // 實測寬度 (現況)
-  length_m: number          // 道路長度 (公尺)
-  category: 'narrow' | 'mid' | 'wide'  // 寬度分類 (前端計算)
-  geometry: any             // GeoJSON LineString 格式
-}
-
-/**
- * 消防栓資料 (Mock)
- * 與 FireHydrantFeatureProps 的差異:
- * - 有 type 欄位區分地上/地下型
- */
-export interface FireHydrant {
-  id: string
-  type: 'underground' | 'aboveground'  // 地下式/地上式
-  district: string
-  geometry: any             // GeoJSON Point 格式 [經度, 緯度]
-}
-
-/**
- * 消防隊資料 (Mock)
- */
-export interface FireStation {
-  id: string
-  name: string
-  address: string
-  district: string
-  geometry: any             // GeoJSON Point 格式 [經度, 緯度]
-}
-
-/**
- * 統計資料 (Mock)
- * 與 DistrictStats 的差異:
- * - 使用 camelCase 命名 (前端慣例)
- * - 欄位較簡化
- */
-export interface Stats {
-  narrowAlleyCount: number      // 窄巷數量
-  narrowAlleyLengthKm: number   // 窄巷總長度 (公里)
-  narrowAlleyDensity: number    // 窄巷密度
-  hydrantCount: number          // 消防栓數量
-  hydrantDensity: number        // 消防栓密度
-  avgServiceRadius: number      // 平均服務半徑 (公尺)
 }
 
 // ────────────────────────────────────────────────────────────

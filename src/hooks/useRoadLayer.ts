@@ -7,7 +7,7 @@
  * - 支援按行政區篩選道路資料
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Map from 'ol/Map'
 import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
@@ -16,8 +16,8 @@ import { Feature } from 'ol'
 import { LineString } from 'ol/geom'
 import { Style, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
-import { ROADS } from '../mockData'
-import { getRoadWidthClass, ROAD_WIDTH_COLORS } from '../types/geo'
+import { getRoads } from '../services/urbanApi'
+import { ROAD_WIDTH_COLORS } from '../types/geo'
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
 
@@ -34,10 +34,17 @@ export function useRoadLayer(
 ) {
   const layerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const currentZoom = useZoomLevel(map)
+  const [roads, setRoads] = useState<any[]>([])
+
+  // 載入道路資料，district 改變時重新 fetch
+  useEffect(() => {
+    const district = selectedDistrict === 'all' ? undefined : selectedDistrict
+    getRoads(district).then(setRoads).catch(console.error)
+  }, [selectedDistrict])
 
   // 建立並加入圖層
   useEffect(() => {
-    if (!map) return
+    if (!map || roads.length === 0) return
 
     // 找到 roadsGroup 容器
     const roadsGroup = map.getLayers().getArray().find(
@@ -50,26 +57,30 @@ export function useRoadLayer(
     }
 
     // 建立 Features
-    const features = ROADS.map(r => {
-      const coords = r.geometry.coordinates.map(c =>fromLonLat([c[0], c[1]]))
+    const features = roads.map(r => {
+      const coords = r.geometry.coordinates.map((c: number[]) => fromLonLat([c[0], c[1]]))
       const line = new LineString(coords)
       return new Feature({
         geometry: line,
-        name: r.name,
-        planned_width: r.planned_width,
-        district: r.district,
+        road_width: r.road_width,
+        width_m: r.width_m,
+        width_category: r.width_category,
         type: 'road',
       })
     })
 
     // ========== 第一階段：圖層創建 ==========
-    // 建立圖層 (使用動態樣式函數)
+    const categoryColorMap: Record<string, string> = {
+      narrow: ROAD_WIDTH_COLORS.narrow,
+      mid: ROAD_WIDTH_COLORS.medium,
+      wide: ROAD_WIDTH_COLORS.wide,
+    }
+
     const layer = new VectorLayer({
       source: new VectorSource({ features }),
       style: (feature) => {
-        const width = feature.get('planned_width')
-        const widthClass = getRoadWidthClass(width)
-        const color = ROAD_WIDTH_COLORS[widthClass]
+        const category = feature.get('width_category')
+        const color = categoryColorMap[category] ?? ROAD_WIDTH_COLORS.wide
 
         return new Style({
           stroke: new Stroke({
@@ -89,7 +100,7 @@ export function useRoadLayer(
       roadsGroup.getLayers().remove(layer)
       layerRef.current = null
     }
-  }, [map])
+  }, [map, roads])
 
   // ========== 第二階段：動態控制 ==========
   // 控制顯示/隱藏：基於 zoom level
@@ -100,18 +111,6 @@ export function useRoadLayer(
       layerRef.current.setVisible(shouldShow)
     }
   }, [visible, currentZoom])
-
-  // TODO: 支援按行政區篩選 (目前顯示全部道路)
-  // 之後串接 API 時,改為透過 selectedDistrict 參數呼叫 getRoads(district)
-  useEffect(() => {
-    if (!layerRef.current) return
-
-    // 目前 Mock 資料階段,不做篩選
-    // 串接 API 後,這裡會重新載入資料
-    if (selectedDistrict !== 'all') {
-      // TODO: 呼叫 getRoads(selectedDistrict) 並更新圖層
-    }
-  }, [selectedDistrict])
 
   return layerRef
 }
