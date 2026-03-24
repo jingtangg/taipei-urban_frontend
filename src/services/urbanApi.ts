@@ -12,7 +12,7 @@
  */
 
 import { apiQuery } from './api'
-import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps, DistrictStats, District, DistrictBasic} from '../types/geo'
+import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps, NarrowAlleyFeatureProps, DistrictStats, District, DistrictBasic} from '../types/geo'
 
 /**
  * 取得道路資料
@@ -86,5 +86,19 @@ export const getDistricts = () =>
     '/districts/geojson',
     {},
     '無法取得行政區資料',
+    'GET',
+  )
+
+/**
+ * 取得窄巷資料（消防局實測窄巷）
+ * @param district - 行政區名稱(選填)
+ * @param category - 消防局分類(選填)，'紅區' 或 '黃區'
+ * @returns Promise<NarrowAlleyFeatureProps[]> 窄巷圖徵陣列，包含實際寬度、計畫寬度、幾何資料
+ */
+export const getNarrowAlleys = (district?: string, category?: string) =>
+  apiQuery<NarrowAlleyFeatureProps[]>(
+    '/narrow-alleys',
+    { district, category },
+    '無窄巷資料，請確認查詢資訊是否正確',
     'GET',
   )

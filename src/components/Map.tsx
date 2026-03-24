@@ -19,6 +19,7 @@ import { Point, LineString, Polygon } from 'ol/geom'
 import { useMapInit } from '../hooks/useMapInit'
 import { useDistrictLayer, DETAIL_ZOOM_THRESHOLD } from '../hooks/useDistrictLayer'
 import { useRoadLayer } from '../hooks/useRoadLayer'
+import { useNarrowAlleyLayer } from '../hooks/useNarrowAlleyLayer'
 import { useFireLayers } from '../hooks/useFireLayers'
 import { useZoomLevel } from '../hooks/useZoomLevel'
 
@@ -31,6 +32,7 @@ interface MapViewProps {
   baseLayer: 'light' | 'satellite'
   layers: {
     roads: boolean
+    narrowAlleys: boolean
     hydrants: boolean
     stations: boolean
     districts: boolean
@@ -54,6 +56,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
     // ========== 各功能圖層 ==========
     useDistrictLayer(mapRef.current, layers.districts, selectedDistrict)
     useRoadLayer(mapRef.current, layers.roads, selectedDistrict)
+    useNarrowAlleyLayer(mapRef.current, layers.narrowAlleys, selectedDistrict)
     useFireLayers(mapRef.current, {showHydrants: layers.hydrants, showStations: layers.stations, district: selectedDistrict})
 
     // ========== Popup Overlay 初始化 ==========

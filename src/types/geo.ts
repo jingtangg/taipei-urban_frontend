@@ -12,8 +12,8 @@
 // ────────────────────────────────────────────────────────────
 
 /**
- * 道路圖徵屬性
- * 對應後端 roads_planned 資料表結構
+ * 都市計畫道路圖徵屬性
+ * 對應後端 roads_planned 資料表結構（虛線底圖）
  */
 export interface RoadFeatureProps {
   id: string
@@ -42,6 +42,21 @@ export interface FireStationFeatureProps {
   name: string             // 消防隊名稱
   district: string         // 轄區
   phone?: string           // 聯絡電話
+}
+
+/**
+ * 窄巷圖徵屬性
+ * 對應後端 narrow_alleys_temp 資料表結構（消防局實測窄巷 - 實線）
+ */
+export interface NarrowAlleyFeatureProps {
+  id: string
+  alley_name: string       // 巷道名稱
+  district: string         // 行政區
+  category: string         // 消防局分類（紅區/黃區）
+  width_m: number          // 實際寬度
+  road_width: number | null // 都市計畫寬度
+  snap_distance_m: number | null // 吸附距離
+  geometry: any            // GeoJSON LineString
 }
 
 /**
@@ -116,4 +131,62 @@ export function getRoadWidthClass(width: number): RoadWidthClass {
   if (width < 3.5) return 'narrow'
   if (width <= 6)  return 'medium'
   return 'wide'
+}
+
+/**
+ * 根據道路寬度計算風險資訊
+ * @param width - 道路寬度 (公尺)
+ * @returns 風險等級、描述、顏色
+ */
+export function getRiskInfo(width: number) {
+  if (width < 3.5) {
+    return {
+      level: '極高風險',
+      description: '消防車無法通行',
+      color: ROAD_WIDTH_COLORS.narrow
+    }
+  }
+  if (width < 6) {
+    return {
+      level: '高風險',
+      description: '通行受限',
+      color: ROAD_WIDTH_COLORS.medium
+    }
+  }
+  return {
+    level: '一般',
+    description: '正常通行',
+    color: ROAD_WIDTH_COLORS.wide
+  }
+}
+
+/**
+ * 計算警示提醒
+ * @param widthDiff - 路寬差異 (公尺)
+ * @param snapDistance - 吸附距離 (公尺)
+ * @returns 警示文字
+ */
+export function getWarning(widthDiff: number | null, snapDistance: number | null): string {
+  const warnings: string[] = []
+
+  // A. 路寬偏移警示
+  if (widthDiff !== null) {
+    const absWidthDiff = Math.abs(widthDiff)
+    if (absWidthDiff > 30) {
+      warnings.push('路寬偏移 ❗')
+    } else if (absWidthDiff > 8) {
+      warnings.push('路寬偏移 ❕')
+    }
+  }
+
+  // B. 距離偏移警示
+  if (snapDistance !== null) {
+    if (snapDistance > 50) {
+      warnings.push('距離偏移 ❗')
+    } else if (snapDistance > 30) {
+      warnings.push('距離偏移 ❕')
+    }
+  }
+
+  return warnings.length > 0 ? warnings.join(' ') : '無'
 }

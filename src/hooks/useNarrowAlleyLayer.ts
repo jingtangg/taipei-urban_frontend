@@ -1,10 +1,10 @@
 /**
- * 道路圖層管理 Hook
+ * 窄巷圖層管理 Hook
  *
  * 職責:
- * - 管理道路寬度圖層的建立與顯示
- * - 依據道路寬度分類套用不同顏色 (窄巷風險視覺化)
- * - 支援按行政區篩選道路資料
+ * - 管理消防局實測窄巷圖層的建立與顯示（實線）
+ * - 依據實際寬度套用不同顏色 (紅色 < 3.5m, 黃色 3.5-6m)
+ * - 支援按行政區和分類篩選資料
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -16,35 +16,35 @@ import { Feature } from 'ol'
 import { LineString } from 'ol/geom'
 import { Style, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
-import { getRoads } from '../services/urbanApi'
-import { ROAD_WIDTH_COLORS } from '../types/geo'
+import { getNarrowAlleys } from '../services/urbanApi'
+import { getRiskInfo } from '../types/geo'
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
 
 /**
- * 道路圖層管理 Hook
+ * 窄巷圖層管理 Hook
  * @param map - OpenLayers Map 實例
  * @param visible - 是否顯示圖層
  * @param selectedDistrict - 選中的行政區名稱,'all' 表示顯示全部
  */
-export function useRoadLayer(
+export function useNarrowAlleyLayer(
   map: Map | null,
   visible: boolean,
   selectedDistrict: string = 'all'
 ) {
   const layerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const currentZoom = useZoomLevel(map)
-  const [roads, setRoads] = useState<any[]>([])
+  const [alleys, setAlleys] = useState<any[]>([])
 
-  // 載入道路資料，district 改變時重新 fetch
+  // 載入窄巷資料，district 改變時重新 fetch
   useEffect(() => {
     const district = selectedDistrict === 'all' ? undefined : selectedDistrict
-    getRoads(district).then(setRoads).catch(console.error)
+    getNarrowAlleys(district).then(setAlleys).catch(console.error)
   }, [selectedDistrict])
 
   // 建立並加入圖層
   useEffect(() => {
-    if (!map || roads.length === 0) return
+    if (!map || alleys.length === 0) return
 
     // 找到 roadsGroup 容器
     const roadsGroup = map.getLayers().getArray().find(
@@ -56,45 +56,41 @@ export function useRoadLayer(
       return
     }
 
-    // 建立 Features（只保留 width_m < 6 的道路作為窄巷虛線底圖）
-    const features = roads
-      .filter(r => r.width_m < 6)
-      .map(r => {
-        const coords = r.geometry.coordinates.map((c: number[]) => fromLonLat([c[0], c[1]]))
-        const line = new LineString(coords)
-        return new Feature({
-          geometry: line,
-          road_width: r.road_width,
-          width_m: r.width_m,
-          width_category: r.width_category,
-          type: 'road',
-        })
+    // 建立 Features
+    const features = alleys.map(alley => {
+      const coords = alley.geometry.coordinates.map((c: number[]) => fromLonLat([c[0], c[1]]))
+      const line = new LineString(coords)
+
+      return new Feature({
+        geometry: line,
+        id: alley.id,
+        alley_name: alley.alley_name,
+        district: alley.district,
+        category: alley.category,
+        width_m: alley.width_m,
+        road_width: alley.road_width,
+        snap_distance_m: alley.snap_distance_m,
+        type: 'narrow_alley',
       })
+    })
 
     // ========== 第一階段：圖層創建 ==========
-    const categoryColorMap: Record<string, string> = {
-      narrow: ROAD_WIDTH_COLORS.narrow,
-      mid: ROAD_WIDTH_COLORS.medium,
-      wide: ROAD_WIDTH_COLORS.wide,
-    }
-
     const layer = new VectorLayer({
       source: new VectorSource({ features }),
       style: (feature) => {
-        const category = feature.get('width_category')
-        const color = categoryColorMap[category] ?? ROAD_WIDTH_COLORS.wide
+        const width = feature.get('width_m')
+        const riskInfo = getRiskInfo(width)
 
         return new Style({
           stroke: new Stroke({
-            color,
-            width: 2,
-            lineDash: [5, 5], // 虛線樣式
+            color: riskInfo.color,
+            width: 3,
           }),
         })
       },
-      properties: { name: '都市計畫窄巷（虛線）' },
+      properties: { name: '消防局實測窄巷' },
       visible: false,
-      zIndex: 5, // 虛線在底層
+      zIndex: 10, // 實線在虛線上面
     })
 
     layerRef.current = layer
@@ -104,7 +100,7 @@ export function useRoadLayer(
       roadsGroup.getLayers().remove(layer)
       layerRef.current = null
     }
-  }, [map, roads])
+  }, [map, alleys])
 
   // ========== 第二階段：動態控制 ==========
   // 控制顯示/隱藏：基於 zoom level

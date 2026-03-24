@@ -23,7 +23,7 @@ const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
 export default function MapPage() {
   const [selectedDistrict, setSelectedDistrict] = useState('all')
   const [baseLayer, setBaseLayer] = useState<'light' | 'satellite'>('light')
-  const [layers, setLayers] = useState({roads: true, hydrants: true, stations: true, districts: true})
+  const [layers, setLayers] = useState({roads: true, narrowAlleys: true, hydrants: true, stations: true, districts: true})
   const [isLeftOpen,  setIsLeftOpen]  = useState(true)
   const [isRightOpen, setIsRightOpen] = useState(true)
   const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標的 游標位置
@@ -206,10 +206,11 @@ export default function MapPage() {
                 </h3>
                 <div className="space-y-1">
                   {([
-                    ['roads',     '道路寬度'],
-                    ['hydrants',  '消防栓分佈'],
-                    ['stations',  '消防分隊'],
-                    ['districts', '行政區界'],
+                    ['roads',        '都市計畫窄巷'],
+                    ['narrowAlleys', '消防局實測窄巷'],
+                    ['hydrants',     '消防栓分佈'],
+                    ['stations',     '消防分隊'],
+                    ['districts',    '行政區界'],
                   ] as const).map(([key, label]) => (
                     <button
                       key={key}
