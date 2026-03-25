@@ -79,7 +79,7 @@ export function useNarrowAlleyLayer(
       source: new VectorSource({ features }),
       style: (feature) => {
         const width = feature.get('width_m')
-        const riskInfo = getRiskInfo(width)
+        const riskInfo = getRiskInfo(width, 'actual')
 
         return new Style({
           stroke: new Stroke({
@@ -90,7 +90,7 @@ export function useNarrowAlleyLayer(
       },
       properties: { name: '消防局實測窄巷' },
       visible: false,
-      zIndex: 10, // 實線在虛線上面
+      zIndex: 10,
     })
 
     layerRef.current = layer

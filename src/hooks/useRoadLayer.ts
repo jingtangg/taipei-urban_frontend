@@ -17,7 +17,7 @@ import { LineString } from 'ol/geom'
 import { Style, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
 import { getRoads } from '../services/urbanApi'
-import { ROAD_WIDTH_COLORS } from '../types/geo'
+import { getRiskInfo } from '../types/geo'
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
 
@@ -72,29 +72,23 @@ export function useRoadLayer(
       })
 
     // ========== 第一階段：圖層創建 ==========
-    const categoryColorMap: Record<string, string> = {
-      narrow: ROAD_WIDTH_COLORS.narrow,
-      mid: ROAD_WIDTH_COLORS.medium,
-      wide: ROAD_WIDTH_COLORS.wide,
-    }
-
     const layer = new VectorLayer({
       source: new VectorSource({ features }),
       style: (feature) => {
-        const category = feature.get('width_category')
-        const color = categoryColorMap[category] ?? ROAD_WIDTH_COLORS.wide
+        const width = feature.get('width_m')
+        const riskInfo = getRiskInfo(width, 'planned')
 
         return new Style({
           stroke: new Stroke({
-            color,
-            width: 2,
-            lineDash: [5, 5], // 虛線樣式
+            color: riskInfo.color,
+            width: 3,
+            lineDash: [10, 5],
           }),
         })
       },
       properties: { name: '都市計畫窄巷（虛線）' },
       visible: false,
-      zIndex: 5, // 虛線在底層
+      zIndex: 5,
     })
 
     layerRef.current = layer

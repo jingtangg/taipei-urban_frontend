@@ -86,10 +86,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
       if (!mapRef.current) return
 
       // Popup HTML 模板生成器
-      const createPopupHTML = (headerColor: string, title: string, bodyContent: string) => `
+      const createPopupHTML = (headerColor: string, title: string, bodyContent: string, closeBracket: boolean = true) => `
         <div class="terminal-popup">
           <div class="terminal-popup-header text-[${headerColor}]">
-            [ ${title} ]
+            [ ${title}${closeBracket ? ' ]' : ''}
           </div>
           <div class="terminal-popup-body">
             ${bodyContent}
@@ -100,10 +100,12 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
       const handleClick = (evt: any) => {
         const map = mapRef.current!
 
-        // 收集點擊位置的所有 features
+        // 收集點擊位置的所有 features（增加線段偵測範圍）
         const features: any[] = []
         map.forEachFeatureAtPixel(evt.pixel, (f) => {
           features.push(f)
+        }, {
+          hitTolerance: 10  // 增加點擊容差範圍（像素）
         })
 
         // 過濾掉行政區相關圖層，優先處理其他圖層（道路、消防栓、消防局）
@@ -137,34 +139,74 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
                 onDistrictClick(props.name)
               }
             }
-            // 第二層（zoom ≥ 15）：點邊界 → 顯示「您點擊的位置於 XX 範圍」popup
-            else {
-              popupContent = createPopupHTML(
-                '#00ff41',
-                `${props.name} 範圍`,
-                `
-                  <p>> 您點擊的位置於${props.name}範圍</p>
-                `
-              )
-            }
           }
 
-          // 道路 Popup
+          // 都市計畫窄巷 Popup
           else if (props.type === 'road') {
-            const statusMap: Record<string, { label: string; description: string }> = {
-              narrow: { label: '無法通行',   description: '消防車無法進入' },
-              mid:    { label: '有限通行',   description: '僅小型消防車可進入' },
-              wide:   { label: '正常通行',   description: '消防車可順利進入' },
-            }
-            const status = statusMap[props.width_category] ?? statusMap.wide
+            const width = props.width_m
+            let riskLevel = '一般'
+            let riskDesc = '正常通行'
+            if (width < 3.5) { riskLevel = '極高風險', riskDesc = '消防車無法通行' } 
+            else if (width < 6) { riskLevel = '高風險', riskDesc = '通行受限' }
+
             popupContent = createPopupHTML(
               '#00ff41',
-              `計畫路寬: ${props.road_width}`,
+              `計畫路寬: ${width.toFixed(1)}M`,
               `
-                <p>> 寬度: ${props.width_m}m</p>
-                <p>> 通行狀態: ${status.label}</p>
-                <p>> ${status.description}</p>
+                <p>> 風險等級: ${riskLevel}</p>
+                <p>> 風險描述: ${riskDesc}</p>
+                <p>> 資料來源: 都市計畫道路</p>
               `
+            )
+          }
+
+          // 消防局實測窄巷 Popup
+          else if (props.type === 'narrow_alley') {
+            const width = props.width_m
+            const roadWidth = props.road_width
+            const snapDistance = props.snap_distance_m
+            const alleyName = props.alley_name || '未知巷道'
+
+            // 計算風險等級
+            let riskLevel = '一般'
+            let riskDesc = '正常通行'
+            if (width < 3.5) {
+              riskLevel = '極高風險'
+              riskDesc = '消防車無法通行'
+            } else if (width < 6) {
+              riskLevel = '高風險'
+              riskDesc = '通行受限'
+            }
+
+            const warnings = []
+            if (roadWidth) {
+              const widthDiff = roadWidth - width
+              const absWidthDiff = Math.abs(widthDiff)
+              if (absWidthDiff > 30) { warnings.push('路寬偏移 ❗') } 
+              else if (absWidthDiff > 8) { warnings.push('路寬偏移 ❕') }
+            }
+
+            if (snapDistance) {
+              if (snapDistance > 50) { warnings.push('距離偏移 ❗') } 
+              else if (snapDistance > 30) { warnings.push('距離偏移 ❕') }
+            }
+
+            const warningText = warnings.length > 0 ? warnings.join(' ') : '無'
+            const widthDiffText = roadWidth ? (roadWidth - width).toFixed(1) + 'm' : '未有計畫值，待確認'
+
+            popupContent = createPopupHTML(
+              width < 3.5 ? '#ff4444' : '#ffaa00',
+              `實際路寬: ${width.toFixed(1)}M ] ${alleyName}`,
+              `
+                <p>> 風險等級: ${riskLevel}</p>
+                <p>> 風險描述: ${riskDesc}</p>
+                <p>> 計畫路寬: ${roadWidth ? roadWidth.toFixed(1) + 'M' : '未知'}</p>
+                <p>> 路寬差異: ${widthDiffText}</p>
+                <p>> 消防局分類: ${props.category}</p>
+                ${warningText !== '無' ? `<p>> 警示提醒: ${warningText}</p>` : ''}
+                <p>> 資料來源: 消防局 113 年窄巷清冊</p>
+              `,
+              false
             )
           }
 

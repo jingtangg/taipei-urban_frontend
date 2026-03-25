@@ -105,16 +105,26 @@ export interface District extends DistrictBasic {
 export type RoadWidthClass = 'narrow' | 'medium' | 'wide'
 
 /**
- * 道路寬度對應顏色
+ * 道路寬度對應顏色（消防局實測實線）
  * 依消防法規與救災需求定義:
  * - 窄巷 (< 3.5m): 紅色 - 消防車無法通行
- * - 中等 (3.5-6m): 橘色 - 小型消防車可通行
- * - 寬敞 (> 6m): 綠色 - 標準消防車可通行
+ * - 中等 (3.5-6m): 黃色 - 小型消防車可通行
+ * - 寬敞 (> 6m): 綠色 - 標準消防車可通行（窄巷資料中不使用）
  */
 export const ROAD_WIDTH_COLORS: Record<RoadWidthClass, string> = {
-  narrow: '#ff4444',   // 紅色 - 高風險
-  medium: '#ffaa00',   // 橘色 - 中風險
-  wide:   '#00ff41',   // 綠色 - 低風險
+  narrow: '#fc2121',   // 紅色 - 極高風險
+  medium: '#ffaa00',   // 黃色 - 高風險
+  wide:   '#00ff41',   // 綠色 - 一般（不使用）
+}
+
+/**
+ * 都市計畫道路寬度對應顏色（虛線底圖）
+ * 使用不同色系以區別實測值與計畫值
+ */
+export const PLANNED_ROAD_COLORS: Record<RoadWidthClass, string> = {
+  narrow: '#feaeda',   // 粉紅色 - 極高風險
+  medium: '#fff873',   // 淺黃色 - 高風險
+  wide:   '#2d9640',   // 深綠色 - 一般（不使用）
 }
 
 /**
@@ -136,27 +146,30 @@ export function getRoadWidthClass(width: number): RoadWidthClass {
 /**
  * 根據道路寬度計算風險資訊
  * @param width - 道路寬度 (公尺)
+ * @param colorScheme - 顏色方案 ('actual' 實測 | 'planned' 計畫)
  * @returns 風險等級、描述、顏色
  */
-export function getRiskInfo(width: number) {
+export function getRiskInfo(width: number, colorScheme: 'actual' | 'planned' = 'actual') {
+  const colors = colorScheme === 'actual' ? ROAD_WIDTH_COLORS : PLANNED_ROAD_COLORS
+
   if (width < 3.5) {
     return {
       level: '極高風險',
       description: '消防車無法通行',
-      color: ROAD_WIDTH_COLORS.narrow
+      color: colors.narrow
     }
   }
   if (width < 6) {
     return {
       level: '高風險',
       description: '通行受限',
-      color: ROAD_WIDTH_COLORS.medium
+      color: colors.medium
     }
   }
   return {
     level: '一般',
     description: '正常通行',
-    color: ROAD_WIDTH_COLORS.wide
+    color: colors.wide
   }
 }
 

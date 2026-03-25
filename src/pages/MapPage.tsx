@@ -226,17 +226,31 @@ export default function MapPage() {
 
               <section className="p-4 border border-[#00ff41]/30">
                 <h3 className="font-bold uppercase tracking-widest text-[10px] mb-3 text-[#00ff41]">圖例說明</h3>
-                <div className="space-y-2 text-[10px]">
-                  {[
-                    { color: '#ff4444', label: '窄路 (< 3.5m)' },
-                    { color: '#ffaa00', label: '中等路寬 (3.5–6m)' },
-                    { color: '#00ff41', label: '寬路 (> 6m)' },
-                  ].map(({ color, label }) => (
-                    <div key={label} className="flex items-center gap-2">
-                      <div className="w-3 h-1" style={{ backgroundColor: color }} />
-                      <span className="opacity-80 text-[#00ff41]">{label}</span>
-                    </div>
-                  ))}
+                <div className="space-y-3 text-[10px]">
+                  <div>
+                    <p className="mb-2 opacity-60">消防局實測窄巷</p>
+                    {[
+                      { color: '#fc2121', label: '極高風險 (< 3.5m)' },
+                      { color: '#ffaa00', label: '高風險 (3.5–6m)' },
+                    ].map(({ color, label }) => (
+                      <div key={label} className="flex items-center gap-2 mb-1">
+                        <div className="w-3 h-1" style={{ backgroundColor: color }} />
+                        <span className="opacity-80 text-[#00ff41]">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="mb-2 opacity-60">都市計畫窄巷</p>
+                    {[
+                      { color: '#feaeda', label: '極高風險 (< 3.5m)', dashed: true },
+                      { color: '#fff873', label: '高風險 (3.5–6m)', dashed: true },
+                    ].map(({ color, label }) => (
+                      <div key={label} className="flex items-center gap-2 mb-1">
+                        <div className="w-3 h-1 border-t-2 border-dashed" style={{ borderColor: color }} />
+                        <span className="opacity-80 text-[#00ff41]">{label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </section>
 
