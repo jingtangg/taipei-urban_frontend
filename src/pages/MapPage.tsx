@@ -224,6 +224,23 @@ export default function MapPage() {
                 </div>
               </section>
 
+              <section>
+                <h3 className="font-bold uppercase tracking-widest text-xs mb-3 flex items-center gap-2 text-[#00ff41]">
+                  <Activity className="w-4 h-4" /> 視覺模式
+                </h3>
+                <div className="space-y-1">
+                  {(['light', 'satellite'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setBaseLayer(mode)}
+                      className={`w-full terminal-btn text-left text-xs ${baseLayer === mode ? 'bg-[#00ff41] text-black' : ''}`}
+                    >
+                      {mode === 'light' ? '[ ] 向量網格' : '[ ] 衛星掃描'}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
               <section className="p-4 border border-[#00ff41]/30">
                 <h3 className="font-bold uppercase tracking-widest text-[10px] mb-3 text-[#00ff41]">圖例說明</h3>
                 <div className="space-y-3 text-[10px]">
@@ -251,23 +268,6 @@ export default function MapPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="font-bold uppercase tracking-widest text-xs mb-3 flex items-center gap-2 text-[#00ff41]">
-                  <Activity className="w-4 h-4" /> 視覺模式
-                </h3>
-                <div className="space-y-1">
-                  {(['light', 'satellite'] as const).map(mode => (
-                    <button
-                      key={mode}
-                      onClick={() => setBaseLayer(mode)}
-                      className={`w-full terminal-btn text-left text-xs ${baseLayer === mode ? 'bg-[#00ff41] text-black' : ''}`}
-                    >
-                      {mode === 'light' ? '[ ] 向量網格' : '[ ] 衛星掃描'}
-                    </button>
-                  ))}
                 </div>
               </section>
             </div>
