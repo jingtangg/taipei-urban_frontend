@@ -115,7 +115,6 @@ export function useDistrictLayer(
         name: d.name,
         area_km2: d.area_km2,
         narrowDensity: d.narrowDensity || 0,
-        hydrantDensity: d.hydrantDensity || 0,
         type: "district_marker",
       });
     });

@@ -89,8 +89,7 @@ export interface DistrictBasic {
  */
 export interface District extends DistrictBasic {
   geometry: any             // GeoJSON Polygon/MultiPolygon
-  narrowDensity: number     // 窄巷密度 (km/km²)
-  hydrantDensity: number    // 消防栓密度 (個/km²)
+  narrowDensity: number     // 窄巷密度 (條/km²)
 }
 
 // ════════════════════════════════════════════════════════════
