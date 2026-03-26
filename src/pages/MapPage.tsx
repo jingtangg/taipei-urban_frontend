@@ -328,6 +328,25 @@ export default function MapPage() {
               <section className="p-4 border border-[#00ff41]/30">
                 <h3 className="font-bold uppercase tracking-widest text-[10px] mb-3 text-[#00ff41]">圖例說明</h3>
                 <div className="space-y-3 text-[10px]">
+                  {/* 行政區風險等級 */}
+                  <div>
+                    <p className="mb-2 opacity-60">行政區顏色分級</p>
+                    {/* 分級說明 */}
+                    <div className="space-y-1">
+                      {[
+                        { color: '#ff0000', label: '≥20 條/km²  極高風險' },
+                        { color: '#ff6600', label: '7-20 條/km²  高風險' },
+                        { color: '#ffaa00', label: '2-7 條/km²   中風險' },
+                        { color: '#00ff41', label: '<2 條/km²    低風險' },
+                      ].map(({ color, label }) => (
+                        <div key={label} className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                          <span className="opacity-80 text-[#00ff41] font-mono">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <p className="mb-2 opacity-60">消防局實測窄巷</p>
                     {[

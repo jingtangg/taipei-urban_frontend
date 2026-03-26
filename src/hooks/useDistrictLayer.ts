@@ -32,57 +32,23 @@ const TAIPEI_CENTER = fromLonLat([121.5654, 25.033]);
 export const DETAIL_ZOOM_THRESHOLD = 15;
 
 /**
- * 計算複合風險等級
+ * 計算風險等級顏色
+ * 基於窄巷密度四分位數分級
  *
- * 法規依據：
- * - 窄巷門檻：內政部「劃設消防車輛救災活動空間指導原則」3.5m/4m 標準
- * - 消防栓門檻：經濟部「救火栓設置標準」第5條，市中心區每60-120m設一處
- * - 搶救困難：台北市「消防通道劃設及管理作業程序」第9點
+ * 數據分析:
+ * - Q1 (25%): 2.0 條/km²
+ * - Q2 (50%): 6.4 條/km²
+ * - Q3 (75%): 18.8 條/km²
+ * - Q4 (100%): 45.1 條/km²
  *
- * @param narrowDensity - 窄巷密度 (km/km²)，寬度 < 4m 巷道的總長度/行政區面積
- * @param hydrantDensity - 消防栓密度 (/km²)，消防栓數量/行政區面積
+ * @param narrowDensity - 窄巷密度 (條/km²)
  * @returns 風險顏色
  */
-function getRiskColor(narrowDensity: number, hydrantDensity: number): string {
-  // 極高風險：窄巷密集 + 消防栓嚴重不足
-  // 對應「搶救困難地區」第1類(連棟≥50戶) + 第2類(水源缺乏)
-  if (narrowDensity >= 0.3 && hydrantDensity < 10) {
-    return "rgba(255, 0, 0, 0.9)"; // 深紅 - 極高風險
-  }
-
-  // 高風險：窄巷密集但消防栓一般
-  // 對應「搶救困難地區」第1類
-  if (narrowDensity >= 0.3) {
-    return "rgba(255, 68, 68, 0.8)"; // 紅 - 高風險
-  }
-
-  // 中高風險：中等窄巷但消防栓不足
-  if (narrowDensity >= 0.1 && hydrantDensity < 10) {
-    return "rgba(255, 102, 0, 0.8)"; // 橘紅 - 中高風險
-  }
-
-  // 中風險：中等窄巷，消防栓一般
-  if (narrowDensity >= 0.1) {
-    return "rgba(255, 170, 0, 0.8)"; // 橘 - 中風險
-  }
-
-  // 低風險：窄巷少，符合3.5m通行標準
-  return "rgba(0, 255, 65, 0.8)"; // 綠 - 低風險
-}
-
-/**
- * 計算圓形標記大小
- * 基於窄巷密度 (越高圓圈越大)
- *
- * @param narrowDensity - 窄巷密度 (km/km²)
- * @returns 圓形半徑 (px)
- */
-function getRiskRadius(narrowDensity: number): number {
-  const baseRadius = 18;
-  const maxRadius = 35;
-  // 以 0.5 km/km² 為最大值進行縮放
-  const scale = Math.min(narrowDensity / 0.5, 1);
-  return baseRadius + (maxRadius - baseRadius) * scale;
+function getRiskColor(narrowDensity: number): string {
+  if (narrowDensity >= 20) return 'rgba(255, 0, 0, 0.85)'    // 紅色：極高風險 (≥Q3)
+  if (narrowDensity >= 7)  return 'rgba(255, 102, 0, 0.85)'  // 橘色：高風險 (Q2-Q3)
+  if (narrowDensity >= 2)  return 'rgba(255, 170, 0, 0.85)'  // 黃色：中風險 (Q1-Q2)
+  return 'rgba(0, 255, 65, 0.85)'                            // 綠色：低風險 (<Q1)
 }
 
 /**
@@ -175,28 +141,18 @@ export function useDistrictLayer(
     const markerLayer = new VectorLayer({
       source: new VectorSource({ features: markerFeatures }),
       style: (feature) => {
-        const name = feature.get("name");
         const narrowDensity = feature.get("narrowDensity") as number;
-        const hydrantDensity = feature.get("hydrantDensity") as number;
 
         return new Style({
           image: new Circle({
-            radius: getRiskRadius(narrowDensity),
+            radius: 15,
             fill: new Fill({
-              color: getRiskColor(narrowDensity, hydrantDensity),
+              color: getRiskColor(narrowDensity),
             }),
             stroke: new Stroke({
               color: "#ffffff",
               width: 2,
             }),
-          }),
-          text: new Text({
-            text: `${name}\n窄巷密度: ${narrowDensity} km/km²\n消防栓密度: ${hydrantDensity} /km²`,
-            offsetY: -40,
-            fill: new Fill({ color: "#ffffff" }),
-            stroke: new Stroke({ color: "#000000", width: 3 }),
-            font: "12px sans-serif",
-            textAlign: "center",
           }),
         });
       },
