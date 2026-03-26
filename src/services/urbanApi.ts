@@ -12,7 +12,16 @@
  */
 
 import { apiQuery } from './api'
-import type {RoadFeatureProps, FireHydrantFeatureProps, FireStationFeatureProps, NarrowAlleyFeatureProps, DistrictStats, District, DistrictBasic} from '../types/geo'
+import type {
+  RoadFeatureProps,
+  FireHydrantFeatureProps,
+  FireStationFeatureProps,
+  NarrowAlleyFeatureProps,
+  District,
+  DistrictBasic,
+  NarrowAlleyStatistics,
+  DistrictRanking
+} from '../types/geo'
 
 /**
  * 取得道路資料
@@ -54,18 +63,6 @@ export const getFireStations = (district?: string) =>
   )
 
 /**
- * 取得行政區風險統計資料
- * @returns Promise<DistrictStats[]> 各行政區的防災風險統計指標
- */
-export const getDistrictStats = () =>
-  apiQuery<DistrictStats[]>(
-    '/district_stats',
-    {},
-    '無統計資料，請確認系統狀態是否正常',
-    'GET',
-  )
-
-/**
  * 取得行政區基本資料（不含幾何）
  * 用於下拉選單、統計列表等輕量查詢
  */
@@ -102,3 +99,31 @@ export const getNarrowAlleys = (district?: string, category?: string) =>
     '無窄巷資料，請確認查詢資訊是否正確',
     'GET',
   )
+
+/**
+ * 取得窄巷統計數據（Dashboard 用）
+ * @param district - 行政區名稱(選填)，不傳則回傳全市統計
+ * @returns Promise<NarrowAlleyStatistics> 窄巷統計，包含總數、計畫數、重疊數、新增數
+ */
+export const getNarrowAlleyStatistics = (district?: string) =>
+  apiQuery<NarrowAlleyStatistics>(
+    '/dashboard/narrow-alley-statistics',
+    { district },
+    '無法取得窄巷統計資料',
+    'GET',
+  )
+
+/**
+ * 取得行政區密度排名（Dashboard 用）
+ * 固定回傳全台北市 12 個行政區的排名
+ * @returns Promise<DistrictRanking[]> 行政區排名陣列（依總長度排序）
+ */
+export const getDistrictRankings = async (): Promise<DistrictRanking[]> => {
+  const data = await apiQuery<{ rankings: DistrictRanking[] }>(
+    '/dashboard/district-rankings',
+    {},
+    '無法取得行政區排名資料',
+    'GET',
+  )
+  return data.rankings
+}

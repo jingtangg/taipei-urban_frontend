@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {Terminal, Cpu, Database, Activity, ChevronLeft, ChevronRight, Map as MapIcon, Layers, Maximize} from 'lucide-react'
 import MapView, { type MapViewHandle } from '../components/Map'
-import { getDistricts } from '../services/urbanApi'
-import type { District } from '../types/geo'
+import { getDistricts, getNarrowAlleyStatistics, getDistrictRankings } from '../services/urbanApi'
+import type { District, NarrowAlleyStatistics, DistrictRanking } from '../types/geo'
 
 const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
   const [current, setCurrent] = useState('')
@@ -29,11 +29,30 @@ export default function MapPage() {
   const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標的 游標位置
   const mapRef = useRef<MapViewHandle>(null)
   const [districts, setDistricts] = useState<District[]>([])
+  const [stats, setStats] = useState<NarrowAlleyStatistics | null>(null)
+  const [rankings, setRankings] = useState<DistrictRanking[]>([])
 
   // 載入行政區資料
   useEffect(() => {
     getDistricts().then(setDistricts).catch(console.error)
   }, [])
+
+  // 載入窄巷統計（根據選擇的行政區）
+  useEffect(() => {
+    const district = selectedDistrict === 'all' ? undefined : selectedDistrict
+    getNarrowAlleyStatistics(district)
+      .then(setStats)
+      .catch(console.error)
+  }, [selectedDistrict])
+
+  // 載入行政區排名（僅全區時顯示）
+  useEffect(() => {
+    if (selectedDistrict === 'all') {
+      getDistrictRankings()
+        .then(setRankings)
+        .catch(console.error)
+    }
+  }, [selectedDistrict])
 
   const toggleLayer = (layer: keyof typeof layers) =>
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
@@ -84,25 +103,40 @@ export default function MapPage() {
                 </div>
               </section>
 
-              {/* 統計面板 — 功能3（Week 3 換成 useApi(getDistrictStats) 真實資料） */}
+              {/* 統計面板 */}
               <div className="space-y-6">
                 <section className="space-y-4">
                   <div>
                     <h3 className="text-[#00ff41] font-bold text-xs mb-2 border-l-2 border-[#00ff41] pl-2 uppercase tracking-wider">窄巷數據</h3>
-                    <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                      <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                        <p className="opacity-60 mb-1">數量</p>
-                        <p className="text-[#00ff41] text-sm font-bold">1744 <span className="text-[10px] font-normal">條</span></p>
+                    {stats ? (
+                      <div className="space-y-2 text-[10px] font-mono">
+                        {/* Row 1: 總窄巷數 - full width */}
+                        <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                          <p className="opacity-60 mb-1">總窄巷數</p>
+                          <p className="text-[#00ff41] text-sm font-bold">{stats.total} <span className="text-[10px] font-normal">條</span></p>
+                        </div>
+                        {/* Row 2: 都市計畫 (left) + 消防局重疊 (right) */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                            <p className="opacity-60 mb-1">都市計畫窄巷</p>
+                            <p className="text-[#00ff41] text-sm font-bold">{stats.planned} <span className="text-[10px] font-normal">條</span></p>
+                          </div>
+                          <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                            <p className="opacity-60 mb-1">消防局重疊</p>
+                            <p className="text-[#00ff41] text-sm font-bold">{stats.overlap} <span className="text-[10px] font-normal">條</span></p>
+                          </div>
+                        </div>
+                        {/* Row 3: 消防局實際新增 - full width */}
+                        <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                          <p className="opacity-60 mb-1">消防局實際新增</p>
+                          <p className="text-[#00ff41] text-sm font-bold">{stats.new_discovered} <span className="text-[10px] font-normal">條</span></p>
+                        </div>
                       </div>
-                      <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                        <p className="opacity-60 mb-1">總長度</p>
-                        <p className="text-[#00ff41] text-sm font-bold">100.1 <span className="text-[10px] font-normal">km</span></p>
+                    ) : (
+                      <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] opacity-60">
+                        載入中...
                       </div>
-                      <div className="col-span-2 p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                        <p className="opacity-60 mb-1">分佈密度</p>
-                        <p className="text-[#00ff41] text-sm font-bold">0.37 <span className="text-[10px] font-normal">km/km²</span></p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                   <div>
                     <h3 className="text-[#00ff41] font-bold text-xs mb-2 border-l-2 border-[#00ff41] pl-2 uppercase tracking-wider">消防栓數據</h3>
@@ -124,6 +158,35 @@ export default function MapPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* 行政區密度排名 - 僅全區時顯示 */}
+                  {selectedDistrict === 'all' && rankings.length > 0 && (
+                    <div>
+                      <h3 className="text-[#00ff41] font-bold text-xs mb-2 border-l-2 border-[#00ff41] pl-2 uppercase tracking-wider">行政區密度排名</h3>
+                      <div className="border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] font-mono">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-[#00ff41]/20">
+                              <th className="p-2 text-left opacity-60 font-normal">排名</th>
+                              <th className="p-2 text-left opacity-60 font-normal">區域</th>
+                              <th className="p-2 text-right opacity-60 font-normal">總計(條)</th>
+                              <th className="p-2 text-right opacity-60 font-normal">密度(/km²)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rankings.map((item) => (
+                              <tr key={item.district} className="border-b border-[#00ff41]/10 last:border-0">
+                                <td className="p-2 text-[#00ff41]">{item.rank}</td>
+                                <td className="p-2 text-[#00ff41]">{item.district}</td>
+                                <td className="p-2 text-right text-[#00ff41]">{item.total_count}</td>
+                                <td className="p-2 text-right text-[#00ff41]">{item.density.toFixed(2)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </section>
               </div>
             </div>

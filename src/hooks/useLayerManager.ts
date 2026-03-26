@@ -2,8 +2,7 @@
  * hooks/useLayerManager.ts
  * 對應 mapMixin.js: addLayerToGroup() + layerExists()
  *
- * Vue 版直接操作 this.layers_list 陣列找 group id，
- * React 版相同邏輯：從 map.getLayers() 找 groupId，再 push 進去
+ * 從 map.getLayers() 找 groupId，再 push 進去
  */
 
 import { useCallback } from 'react'
