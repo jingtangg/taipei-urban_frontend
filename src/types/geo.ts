@@ -119,6 +119,16 @@ export interface DistrictRanking {
   density: number          // 密度 (條/km²)
 }
 
+/**
+ * 消防栓統計數據
+ * 對應後端 /api/dashboard/hydrant-statistics
+ */
+export interface HydrantStatistics {
+  total_count: number      // 總消防栓數
+  density: number          // 設置密度 (個/km²)
+  service_radius: number   // 平均服務半徑 (m)
+}
+
 // ════════════════════════════════════════════════════════════
 // 顏色配置常數
 // ════════════════════════════════════════════════════════════

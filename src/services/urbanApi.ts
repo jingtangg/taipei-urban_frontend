@@ -20,7 +20,8 @@ import type {
   District,
   DistrictBasic,
   NarrowAlleyStatistics,
-  DistrictRanking
+  DistrictRanking,
+  HydrantStatistics
 } from '../types/geo'
 
 /**
@@ -127,3 +128,16 @@ export const getDistrictRankings = async (): Promise<DistrictRanking[]> => {
   )
   return data.rankings
 }
+
+/**
+ * 取得消防栓統計數據（Dashboard 用）
+ * @param district - 行政區名稱(選填)，不傳則回傳全市統計
+ * @returns Promise<HydrantStatistics> 消防栓統計，包含總數、密度、服務半徑
+ */
+export const getHydrantStatistics = (district?: string) =>
+  apiQuery<HydrantStatistics>(
+    '/dashboard/hydrant-statistics',
+    { district },
+    '無法取得消防栓統計資料',
+    'GET',
+  )
