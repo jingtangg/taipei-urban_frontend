@@ -24,11 +24,12 @@ import { DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from './useDistrictL
 
 /**
  * 底圖來源 URL
- * TODO: Week 3 換成內政部 NLSC WMTS
- * https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}
+ * light_a: 內政部國土測繪中心 WMTS 電子地圖 (繁體中文) https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}
+ * light_b: OpenStreetMap (繁體中文) https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}
  */
 const TILE_URLS: Record<'light' | 'satellite', string> = {
-  light:     'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+  // light:     'https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}',
+  light:     'https://tile.openstreetmap.org/{z}/{x}/{y}.png' ,
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 }
 
