@@ -95,6 +95,7 @@ export function useNarrowAlleyLayer(
 
     layerRef.current = layer
     roadsGroup.getLayers().push(layer)
+    layer.setVisible(visible && currentZoom >= DETAIL_ZOOM_THRESHOLD) // 立即同步可見度，避免資料載入比 zoom 動畫慢時圖層不顯示
 
     return () => {
       roadsGroup.getLayers().remove(layer)

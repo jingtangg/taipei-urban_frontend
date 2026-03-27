@@ -120,6 +120,8 @@ export function useFireLayers(
     stationLayerRef.current = stationLayer
     fireGroup.getLayers().push(hydrantLayer)
     fireGroup.getLayers().push(stationLayer)
+    hydrantLayer.setVisible(options.showHydrants && currentZoom >= DETAIL_ZOOM_THRESHOLD) // 立即同步可見度，避免資料載入比 zoom 動畫慢時圖層不顯示
+    stationLayer.setVisible(options.showStations && currentZoom >= DETAIL_ZOOM_THRESHOLD)
 
     return () => {
       fireGroup.getLayers().remove(hydrantLayer)
