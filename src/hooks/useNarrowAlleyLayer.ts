@@ -80,13 +80,25 @@ export function useNarrowAlleyLayer(
       style: (feature) => {
         const width = feature.get('width_m')
         const riskInfo = getRiskInfo(width, 'actual')
+        const actualColor =
+          width < 3.5
+            ? 'rgba(252, 33, 33, 0.94)'
+            : 'rgba(255, 170, 0, 0.92)'
 
-        return new Style({
-          stroke: new Stroke({
-            color: riskInfo.color,
-            width: 3,
+        return [
+          new Style({
+            stroke: new Stroke({
+              color: 'rgba(8, 12, 10, 0.62)',
+              width: 4.2,
+            }),
           }),
-        })
+          new Style({
+            stroke: new Stroke({
+              color: actualColor || riskInfo.color,
+              width: 3,
+            }),
+          }),
+        ]
       },
       properties: { name: '消防局實測窄巷' },
       visible: false,

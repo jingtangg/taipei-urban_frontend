@@ -14,7 +14,7 @@ import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import { Feature } from 'ol'
 import { Point } from 'ol/geom'
-import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style'
+import { Style, Circle as CircleStyle, Fill, Stroke, RegularShape } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
@@ -77,13 +77,48 @@ export function useFireLayers(
 
     const hydrantLayer = new VectorLayer({
       source: new VectorSource({ features: hydrantFeatures }),
-      style: new Style({
-        image: new CircleStyle({
-          radius: 5,
-          fill: new Fill({ color: '#00e5ff' }),
-          stroke: new Stroke({ color: '#ffffff', width: 1.5 }),
-        }),
-      }),
+      style: (feature) => {
+        const hydrantType = feature.get('hydrant_type')
+        const accentColor =
+          hydrantType === 'aboveground'
+            ? 'rgba(74, 255, 220, 0.95)'
+            : 'rgba(94, 231, 255, 0.95)'
+
+        return [
+          new Style({
+            image: new CircleStyle({
+              radius: 8,
+              fill: new Fill({ color: 'rgba(74, 255, 220, 0.08)' }),
+              stroke: new Stroke({ color: 'rgba(74, 255, 220, 0.22)', width: 1 }),
+            }),
+          }),
+          new Style({
+            image: new CircleStyle({
+              radius: 4.5,
+              fill: new Fill({ color: 'rgba(6, 12, 11, 0.88)' }),
+              stroke: new Stroke({ color: accentColor, width: 1.2 }),
+            }),
+          }),
+          new Style({
+            image: new RegularShape({
+              points: 4,
+              radius: hydrantType === 'aboveground' ? 2.2 : 2.8,
+              radius2: hydrantType === 'aboveground' ? 0.8 : undefined,
+              angle: Math.PI / 4,
+              fill: new Fill({
+                color:
+                  hydrantType === 'aboveground'
+                    ? accentColor
+                    : 'rgba(6, 12, 11, 0.92)',
+              }),
+              stroke:
+                hydrantType === 'aboveground'
+                  ? undefined
+                  : new Stroke({ color: accentColor, width: 1 }),
+            }),
+          }),
+        ]
+      },
       properties: { name: '消防栓' },
       visible: false, // 初始隱藏，等 zoom 監聽啟動後再決定
     })
@@ -104,13 +139,31 @@ export function useFireLayers(
 
     const stationLayer = new VectorLayer({
       source: new VectorSource({ features: stationFeatures }),
-      style: new Style({
-        image: new CircleStyle({
-          radius: 10,
-          fill: new Fill({ color: '#ffffff' }),
-          stroke: new Stroke({ color: '#ff4444', width: 3 }),
+      style: [
+        new Style({
+          image: new CircleStyle({
+            radius: 12,
+            fill: new Fill({ color: 'rgba(255, 116, 160, 0.10)' }),
+            stroke: new Stroke({ color: 'rgba(255, 116, 160, 0.20)', width: 1.2 }),
+          }),
         }),
-      }),
+        new Style({
+          image: new RegularShape({
+            points: 4,
+            radius: 8.5,
+            angle: Math.PI / 4,
+            fill: new Fill({ color: 'rgba(8, 9, 11, 0.92)' }),
+            stroke: new Stroke({ color: 'rgba(255, 116, 160, 0.95)', width: 1.4 }),
+          }),
+        }),
+        new Style({
+          image: new CircleStyle({
+            radius: 3.2,
+            fill: new Fill({ color: 'rgba(255, 231, 238, 0.96)' }),
+            stroke: new Stroke({ color: 'rgba(255, 116, 160, 0.9)', width: 1 }),
+          }),
+        }),
+      ],
       properties: { name: '消防局' },
       visible: false, // 初始隱藏，等 zoom 監聽啟動後再決定
     })

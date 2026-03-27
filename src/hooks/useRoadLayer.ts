@@ -77,14 +77,27 @@ export function useRoadLayer(
       style: (feature) => {
         const width = feature.get('width_m')
         const riskInfo = getRiskInfo(width, 'planned')
+        const plannedColor =
+          width < 3.5
+            ? 'rgba(254, 174, 218, 0.72)'
+            : 'rgba(255, 248, 115, 0.68)'
 
-        return new Style({
-          stroke: new Stroke({
-            color: riskInfo.color,
-            width: 3,
-            lineDash: [10, 5],
+        return [
+          new Style({
+            stroke: new Stroke({
+              color: 'rgba(8, 12, 10, 0.55)',
+              width: 3.6,
+              lineDash: [8, 5],
+            }),
           }),
-        })
+          new Style({
+            stroke: new Stroke({
+              color: plannedColor || riskInfo.color,
+              width: 2.5,
+              lineDash: [8, 5],
+            }),
+          }),
+        ]
       },
       properties: { name: '都市計畫窄巷（虛線）' },
       visible: false,
