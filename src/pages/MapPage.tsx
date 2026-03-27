@@ -365,11 +365,11 @@ export default function MapPage() {
                   <div>
                     <p className="mb-2 opacity-60">都市計畫窄巷</p>
                     {[
-                      { color: '#feaeda', label: '極高風險 (< 3.5m)', dashed: true },
-                      { color: '#fff873', label: '高風險 (3.5–6m)', dashed: true },
+                      { color: '#feaeda', label: '極高風險 (< 3.5m)' },
+                      { color: '#fff873', label: '高風險 (3.5–6m)' },
                     ].map(({ color, label }) => (
                       <div key={label} className="flex items-center gap-2 mb-1">
-                        <div className="w-3 h-1 border-t-2 border-dashed" style={{ borderColor: color }} />
+                        <div className="w-3 h-1" style={{ backgroundColor: color }} />
                         <span className="opacity-80 text-[#00ff41]">{label}</span>
                       </div>
                     ))}
