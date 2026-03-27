@@ -277,7 +277,10 @@ export default function MapPage() {
                   <Maximize className="w-4 h-4" /> 導航矩陣
                 </h3>
                 <button
-                  onClick={() => mapRef.current?.zoomToTaipei()}
+                  onClick={() => {
+                    mapRef.current?.zoomToTaipei();
+                    setSelectedDistrict('all');
+                  }}
                   className="w-full terminal-btn flex items-center justify-center gap-2 py-3 text-sm"
                 >
                   <MapIcon className="w-4 h-4" /> 執行視角重置
