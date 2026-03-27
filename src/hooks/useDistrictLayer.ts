@@ -174,7 +174,7 @@ export function useDistrictLayer(
             text: name,
             font: 'bold 13px "Courier New", monospace',
             fill: new Fill({ color: "rgba(232, 255, 240, 0.95)" }),
-            backgroundFill: new Fill({ color: "rgba(5, 11, 9, 0.72)" }),
+            backgroundFill: new Fill({ color: "rgba(5, 11, 9, 0.94)" }),
             backgroundStroke: new Stroke({ color: riskColor, width: 1.2 }),
             padding: [7, 16, 7, 16],
           }),
