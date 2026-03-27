@@ -141,10 +141,11 @@ export function useDistrictLayer(
       source: new VectorSource({ features: markerFeatures }),
       style: (feature) => {
         const narrowDensity = feature.get("narrowDensity") as number;
+        const name = feature.get("name") as string;
 
         return new Style({
           image: new Circle({
-            radius: 15,
+            radius: 28,
             fill: new Fill({
               color: getRiskColor(narrowDensity),
             }),
@@ -152,6 +153,14 @@ export function useDistrictLayer(
               color: "#ffffff",
               width: 2,
             }),
+          }),
+          text: new Text({
+            text: name,
+            font: "bold 11px sans-serif",
+            fill: new Fill({ color: "#ffffff" }),
+            stroke: new Stroke({ color: "rgba(0,0,0,0.4)", width: 2 }),
+            textAlign: "center",
+            textBaseline: "middle",
           }),
         });
       },
