@@ -22,7 +22,8 @@ import { useZoomLevel } from "./useZoomLevel";
 import { getDistricts } from "../services/urbanApi";
 import type { District } from "../types/geo";
 
-const TAIPEI_CENTER = fromLonLat([121.5654, 25.033]);
+export const DISTRICT_OVERVIEW_CENTER = fromLonLat([121.5654, 25.065]);
+export const DISTRICT_OVERVIEW_ZOOM = 12.2;
 
 /**
  * 詳細圖層顯示門檻
@@ -219,8 +220,8 @@ export function useDistrictLayer(
     if (selectedDistrict === "all") {
       // 縮放到台北市中心（總覽層，zoom < 15）
       map.getView().animate({
-        center: TAIPEI_CENTER,
-        zoom: 13,
+        center: DISTRICT_OVERVIEW_CENTER,
+        zoom: DISTRICT_OVERVIEW_ZOOM,
         duration: 1500,
       });
     } else {

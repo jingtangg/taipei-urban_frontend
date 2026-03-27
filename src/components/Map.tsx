@@ -17,7 +17,7 @@ import { Point, LineString, Polygon } from 'ol/geom'
 
 // Hooks
 import { useMapInit } from '../hooks/useMapInit'
-import { useDistrictLayer, DETAIL_ZOOM_THRESHOLD } from '../hooks/useDistrictLayer'
+import { useDistrictLayer, DETAIL_ZOOM_THRESHOLD, DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from '../hooks/useDistrictLayer'
 import { useRoadLayer } from '../hooks/useRoadLayer'
 import { useNarrowAlleyLayer } from '../hooks/useNarrowAlleyLayer'
 import { useFireLayers } from '../hooks/useFireLayers'
@@ -274,8 +274,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
       zoomToTaipei: () => {
         if (mapRef.current) {
           mapRef.current.getView().animate({
-            center: mapRef.current.getView().getCenter(),
-            zoom: 13,
+            center: DISTRICT_OVERVIEW_CENTER,
+            zoom: DISTRICT_OVERVIEW_ZOOM,
             duration: 1000,
           })
         }

@@ -20,10 +20,7 @@ import TileLayer from 'ol/layer/Tile'
 import LayerGroup from 'ol/layer/Group'
 import { XYZ } from 'ol/source'
 import { defaults as defaultControls } from 'ol/control'
-import { fromLonLat } from 'ol/proj'
-
-// 台北市中心座標 (台北車站)
-const TAIPEI_CENTER = fromLonLat([121.5654, 25.0330])
+import { DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from './useDistrictLayer'
 
 /**
  * 底圖來源 URL
@@ -84,8 +81,8 @@ export function useMapInit(
       target: containerRef.current,
       layers: [emap, photo, districtGroup, roadsGroup, fireGroup],
       view: new View({
-        center: TAIPEI_CENTER,
-        zoom: 13,
+        center: DISTRICT_OVERVIEW_CENTER,
+        zoom: DISTRICT_OVERVIEW_ZOOM,
         minZoom: 10,
         maxZoom: 18,
       }),
