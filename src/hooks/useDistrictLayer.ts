@@ -15,7 +15,7 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { Feature } from "ol";
 import { Polygon, Point } from "ol/geom";
-import { Style, Stroke, Fill, Circle, Text } from "ol/style";
+import { Style, Stroke, Fill, Text } from "ol/style";
 import { fromLonLat } from "ol/proj";
 import { getCenter } from "ol/extent";
 import { useZoomLevel } from "./useZoomLevel";
@@ -96,7 +96,7 @@ export function useDistrictLayer(
       return new Feature({
         geometry: polygon,
         name: d.name,
-        area_km2: d.area_km2,
+        narrowDensity: d.narrowDensity || 0,
         type: "district_boundary",
       });
     });
@@ -113,7 +113,6 @@ export function useDistrictLayer(
       return new Feature({
         geometry: new Point(center),
         name: d.name,
-        area_km2: d.area_km2,
         narrowDensity: d.narrowDensity || 0,
         type: "district_marker",
       });
@@ -122,16 +121,36 @@ export function useDistrictLayer(
     // 建立邊界圖層 (半透明,不填滿)
     const boundaryLayer = new VectorLayer({
       source: new VectorSource({ features: boundaryFeatures }),
-      style: new Style({
-        stroke: new Stroke({
-          color: "rgba(0, 255, 65, 0.4)",
-          width: 1.5,
-          lineDash: [1, 2],
-        }),
-        fill: new Fill({
-          color: "rgba(251, 255, 0, 0.05)",
-        }),
-      }),
+      style: (feature) => {
+        const narrowDensity = feature.get("narrowDensity") as number;
+        const riskColor = getRiskColor(narrowDensity);
+
+        return [
+          new Style({
+            stroke: new Stroke({
+              color: "rgba(0, 255, 163, 0.10)",
+              width: 6,
+            }),
+            fill: new Fill({
+              color: "rgba(3, 14, 10, 0.20)",
+            }),
+          }),
+          new Style({
+            stroke: new Stroke({
+              color: "rgba(0, 255, 65, 0.38)",
+              width: 2,
+              lineDash: [8, 4],
+            }),
+          }),
+          new Style({
+            stroke: new Stroke({
+              color: riskColor,
+              width: 0.8,
+              lineDash: [2, 6],
+            }),
+          }),
+        ];
+      },
       properties: { name: "行政區邊界" },
       zIndex: 1,
     });
@@ -142,25 +161,16 @@ export function useDistrictLayer(
       style: (feature) => {
         const narrowDensity = feature.get("narrowDensity") as number;
         const name = feature.get("name") as string;
+        const riskColor = getRiskColor(narrowDensity);
 
         return new Style({
-          image: new Circle({
-            radius: 28,
-            fill: new Fill({
-              color: getRiskColor(narrowDensity),
-            }),
-            stroke: new Stroke({
-              color: "#ffffff",
-              width: 2,
-            }),
-          }),
           text: new Text({
             text: name,
-            font: "bold 11px sans-serif",
-            fill: new Fill({ color: "#ffffff" }),
-            stroke: new Stroke({ color: "rgba(0,0,0,0.4)", width: 2 }),
-            textAlign: "center",
-            textBaseline: "middle",
+            font: 'bold 13px "Courier New", monospace',
+            fill: new Fill({ color: "rgba(212, 255, 227, 0.96)" }),
+            backgroundFill: new Fill({ color: "rgba(4, 10, 8, 0.88)" }),
+            backgroundStroke: new Stroke({ color: riskColor, width: 1.5 }),
+            padding: [6, 14, 6, 14],
           }),
         });
       },
