@@ -17,7 +17,6 @@ import { Feature } from "ol";
 import { Polygon, Point } from "ol/geom";
 import { Style, Stroke, Fill, Text } from "ol/style";
 import { fromLonLat } from "ol/proj";
-import { getCenter } from "ol/extent";
 import { useZoomLevel } from "./useZoomLevel";
 import { getDistricts } from "../services/urbanApi";
 import type { District } from "../types/geo";
@@ -104,12 +103,8 @@ export function useDistrictLayer(
 
     // 建立中心點標記 Features
     const markerFeatures = districts.map((d) => {
-      const coords = d.geometry.coordinates[0].map((c) =>
-        fromLonLat([c[0], c[1]]),
-      );
-      const polygon = new Polygon([coords]);
-      const extent = polygon.getExtent();
-      const center = getCenter(extent);
+      const match = d.label_center.match(/POINT\(([^ ]+) ([^ ]+)\)/);
+      const center = fromLonLat([parseFloat(match![1]), parseFloat(match![2])]);
 
       return new Feature({
         geometry: new Point(center),
@@ -228,12 +223,8 @@ export function useDistrictLayer(
       // 縮放到特定行政區（詳細層，固定 zoom 15）
       const district = districts.find((d) => d.name === selectedDistrict);
       if (district) {
-        const coords = district.geometry.coordinates[0].map((c) =>
-          fromLonLat([c[0], c[1]]),
-        );
-        const polygon = new Polygon([coords]);
-        const extent = polygon.getExtent();
-        const center = getCenter(extent);
+        const match = district.label_center.match(/POINT\(([^ ]+) ([^ ]+)\)/);
+        const center = fromLonLat([parseFloat(match![1]), parseFloat(match![2])]);
 
         // 固定 zoom 到 15，觸發詳細圖層顯示
         map.getView().animate({

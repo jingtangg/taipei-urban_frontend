@@ -90,6 +90,7 @@ export interface DistrictBasic {
 export interface District extends DistrictBasic {
   geometry: any             // GeoJSON Polygon/MultiPolygon
   narrowDensity: number     // 窄巷密度 (條/km²)
+  label_center: string      // WKT "POINT(lng lat)"
 }
 
 // ════════════════════════════════════════════════════════════
