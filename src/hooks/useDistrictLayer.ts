@@ -3,7 +3,7 @@
  *
  * 職責:
  * - 管理行政區邊界圖層的建立與顯示
- * - 顯示行政區中心點圓形標記,以顏色/大小代表風險密度
+ * - 顯示行政區中心點文字標籤,以邊框顏色代表風險密度（粉紅／橘／黃／綠）
  * - 處理行政區選擇時的地圖縮放
  * - 提供行政區資料的視覺化樣式
  */
@@ -45,8 +45,8 @@ export const DETAIL_ZOOM_THRESHOLD = 15;
  * @returns 風險顏色
  */
 function getRiskColor(narrowDensity: number): string {
-  if (narrowDensity >= 20) return 'rgba(255, 0, 0, 0.85)'    // 紅色：極高風險 (≥Q3)
-  if (narrowDensity >= 7)  return 'rgba(255, 102, 0, 0.85)'  // 橘色：高風險 (Q2-Q3)
+  if (narrowDensity >= 20) return 'rgba(255, 120, 168, 0.96)' // 螢光粉紅：極高風險 (≥Q3)
+  if (narrowDensity >= 7)  return 'rgba(255, 136, 24, 0.9)'  // 螢光橘：高風險 (Q2-Q3)
   if (narrowDensity >= 2)  return 'rgba(255, 170, 0, 0.85)'  // 黃色：中風險 (Q1-Q2)
   return 'rgba(0, 255, 65, 0.85)'                            // 綠色：低風險 (<Q1)
 }
@@ -124,29 +124,34 @@ export function useDistrictLayer(
       style: (feature) => {
         const narrowDensity = feature.get("narrowDensity") as number;
         const riskColor = getRiskColor(narrowDensity);
+        const isCriticalRisk = narrowDensity >= 20;
+        const riskDash = isCriticalRisk ? [3, 2] : [10, 6];
+        const riskWidth = isCriticalRisk ? 1.4 : 1;
+        const accentGlowColor = isCriticalRisk
+          ? "rgba(255, 120, 168, 0.20)"
+          : "rgba(118, 255, 201, 0.22)";
 
         return [
           new Style({
             stroke: new Stroke({
-              color: "rgba(0, 255, 163, 0.10)",
-              width: 6,
+              color: "rgba(64, 255, 191, 0.08)",
+              width: 7,
             }),
             fill: new Fill({
-              color: "rgba(3, 14, 10, 0.20)",
+              color: "rgba(4, 12, 10, 0.14)",
             }),
           }),
           new Style({
             stroke: new Stroke({
-              color: "rgba(0, 255, 65, 0.38)",
-              width: 2,
-              lineDash: [8, 4],
+              color: accentGlowColor,
+              width: 2.2,
             }),
           }),
           new Style({
             stroke: new Stroke({
               color: riskColor,
-              width: 0.8,
-              lineDash: [2, 6],
+              width: riskWidth,
+              lineDash: riskDash,
             }),
           }),
         ];
@@ -167,10 +172,10 @@ export function useDistrictLayer(
           text: new Text({
             text: name,
             font: 'bold 13px "Courier New", monospace',
-            fill: new Fill({ color: "rgba(212, 255, 227, 0.96)" }),
-            backgroundFill: new Fill({ color: "rgba(4, 10, 8, 0.88)" }),
-            backgroundStroke: new Stroke({ color: riskColor, width: 1.5 }),
-            padding: [6, 14, 6, 14],
+            fill: new Fill({ color: "rgba(232, 255, 240, 0.95)" }),
+            backgroundFill: new Fill({ color: "rgba(5, 11, 9, 0.72)" }),
+            backgroundStroke: new Stroke({ color: riskColor, width: 1.2 }),
+            padding: [7, 16, 7, 16],
           }),
         });
       },

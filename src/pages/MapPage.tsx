@@ -334,8 +334,8 @@ export default function MapPage() {
                     {/* 分級說明 */}
                     <div className="space-y-1">
                       {[
-                        { color: '#ff0000', label: '≥20 條/km²  極高風險' },
-                        { color: '#ff6600', label: '7-20 條/km²  高風險' },
+                        { color: '#ff78a8', label: '≥20 條/km²  極高風險' },
+                        { color: '#ff8818', label: '7-20 條/km²  高風險' },
                         { color: '#ffaa00', label: '2-7 條/km²   中風險' },
                         { color: '#00ff41', label: '<2 條/km²    低風險' },
                       ].map(({ color, label }) => (
