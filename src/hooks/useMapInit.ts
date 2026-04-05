@@ -18,7 +18,7 @@ import Map from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
 import LayerGroup from 'ol/layer/Group'
-import { XYZ } from 'ol/source'
+import { XYZ, TileWMS } from 'ol/source'
 import { defaults as defaultControls } from 'ol/control'
 import { DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from './useDistrictLayer'
 
@@ -31,6 +31,45 @@ const TILE_URLS: Record<'light' | 'satellite', string> = {
   // light:     'https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}',
   light:     'https://tile.openstreetmap.org/{z}/{x}/{y}.png' ,
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+}
+
+/**
+ * 根據目前網域動態切換 GeoServer WMS endpoint
+ * 仿照公司 publicMixin.js chekcIP() 的做法
+ *
+ * TODO: 上線前補齊其他環境：
+ *   192.168.1.x 區網 → 'http://192.168.1.213:8080/geoserver/taipei_urban/wms'
+ *   正式站            → 'https://geoserver.yourdomain.com/geoserver/taipei_urban/wms'
+ */
+function resolveGeoServerUrl(): string {
+  const hostname = window.location.hostname
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8090/geoserver/taipei_urban/wms'
+  }
+  // TODO: 上線前在此補齊正式站 URL
+  return 'http://localhost:8090/geoserver/taipei_urban/wms'
+}
+
+export const GEOSERVER_WMS_URL = resolveGeoServerUrl()
+
+/**
+ * 建立 GeoServer WMS 圖層
+ * 對應公司 mapMixin.js 的 addWMSLarerToMap()
+ *
+ * @param wmsLayerName  GeoServer 的圖層名稱，格式為 'workspace:layerName'
+ * @param id            圖層 id，供後續查找/切換用
+ * @param visible       預設是否顯示
+ */
+export function createWMSLayer(wmsLayerName: string, id: string, visible = true): TileLayer {
+  return new TileLayer({
+    source: new TileWMS({
+      url: GEOSERVER_WMS_URL,
+      params: { LAYERS: wmsLayerName, TILED: true },
+      serverType: 'geoserver',
+    }),
+    visible,
+    properties: { id },
+  })
 }
 
 /**

@@ -337,10 +337,10 @@ export default function MapPage() {
                     {/* 分級說明 */}
                     <div className="space-y-1">
                       {[
-                        { color: '#ff78a8', label: '≥20 條/km²  極高風險' },
-                        { color: '#ff8818', label: '7-20 條/km²  高風險' },
-                        { color: '#ffaa00', label: '2-7 條/km²   中風險' },
-                        { color: '#00ff41', label: '<2 條/km²    低風險' },
+                        { color: '#ff78a8', label: '≥20 條/km²  高度密集' },
+                        { color: '#ff8818', label: '7-20 條/km²  密集' },
+                        { color: '#ffaa00', label: '2-7 條/km²   中等' },
+                        { color: '#00ff41', label: '<2 條/km²    稀疏' },
                       ].map(({ color, label }) => (
                         <div key={label} className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
@@ -373,6 +373,20 @@ export default function MapPage() {
                         <span className="opacity-80 text-[#00ff41]">{label}</span>
                       </div>
                     ))}
+                  </div>
+
+                  <div>
+                    <p className="mb-2 opacity-60">資料品質警示</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span style={{ display:'inline-block', width:14, height:14, lineHeight:'13px', textAlign:'center', border:'1px solid #ff4444', borderRadius:'9999px', color:'#ff4444', fontSize:9, fontWeight:'bold', boxShadow:'0 0 5px #ff444466' }}>!!</span>
+                        <span className="opacity-80 text-[#00ff41]">路寬偏移 &gt;30m 或 定位偏移 &gt;50m</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span style={{ display:'inline-block', width:14, height:14, lineHeight:'13px', textAlign:'center', border:'1px solid #f5a623', borderRadius:'9999px', color:'#f5a623', fontSize:9, fontWeight:'bold', boxShadow:'0 0 5px #f5a62366' }}>!</span>
+                        <span className="opacity-80 text-[#00ff41]">路寬偏移 &gt;8m 或 定位偏移 &gt;30m</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>

@@ -179,16 +179,19 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
             }
 
             const warnings = []
+            const highWarn = '<span style="display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;border:1px solid #ff4444;border-radius:9999px;color:#ff4444;font-size:9px;font-weight:bold;box-shadow:0 0 5px #ff444466;vertical-align:middle">!!</span>'
+            const midWarn  = '<span style="display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;border:1px solid #f5a623;border-radius:9999px;color:#f5a623;font-size:9px;font-weight:bold;box-shadow:0 0 5px #f5a62366;vertical-align:middle">!</span>'
+
             if (roadWidth) {
               const widthDiff = roadWidth - width
               const absWidthDiff = Math.abs(widthDiff)
-              if (absWidthDiff > 30) { warnings.push('路寬偏移 ❗') } 
-              else if (absWidthDiff > 8) { warnings.push('路寬偏移 ❕') }
+              if (absWidthDiff > 30) { warnings.push(`路寬偏移 ${highWarn}`) }
+              else if (absWidthDiff > 8) { warnings.push(`路寬偏移 ${midWarn}`) }
             }
 
             if (snapDistance) {
-              if (snapDistance > 50) { warnings.push('距離偏移 ❗') } 
-              else if (snapDistance > 30) { warnings.push('距離偏移 ❕') }
+              if (snapDistance > 50) { warnings.push(`距離偏移 ${highWarn}`) }
+              else if (snapDistance > 30) { warnings.push(`距離偏移 ${midWarn}`) }
             }
 
             const warningText = warnings.length > 0 ? warnings.join(' ') : '無'

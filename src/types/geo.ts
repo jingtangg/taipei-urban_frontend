@@ -85,12 +85,12 @@ export interface DistrictBasic {
 
 /**
  * 行政區完整資料
- * 對應後端 /api/districts/geojson，用於地圖圖層顯示
+ * 對應後端 /api/districts/geojson
+ * 幾何邊界由 GeoServer WMS 負責，此 type 只含前端仍需要的欄位
  */
 export interface District extends DistrictBasic {
-  geometry: any             // GeoJSON Polygon/MultiPolygon
-  narrowDensity: number     // 窄巷密度 (條/km²)
-  label_center: string      // WKT "POINT(lng lat)"
+  narrowDensity: number     // 窄巷密度 (條/km²)，供標籤邊框顏色使用
+  label_center: string      // WKT "POINT(lng lat)"，供縮放動畫使用
 }
 
 // ════════════════════════════════════════════════════════════
