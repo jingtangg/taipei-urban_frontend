@@ -34,19 +34,13 @@ const TILE_URLS: Record<'light' | 'satellite', string> = {
 }
 
 /**
- * 根據目前網域動態切換 GeoServer WMS endpoint
- * 仿照公司 publicMixin.js chekcIP() 的做法
- *
- * TODO: 上線前補齊其他環境：
- *   192.168.1.x 區網 → 'http://192.168.1.213:8080/geoserver/taipei_urban/wms'
- *   正式站            → 'https://geoserver.yourdomain.com/geoserver/taipei_urban/wms'
+ * 讀取 GeoServer WMS endpoint
+ * 優先使用環境變數 VITE_GEOSERVER_URL，未設定時 fallback 至本機開發位址
  */
 function resolveGeoServerUrl(): string {
-  const hostname = window.location.hostname
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:8090/geoserver/taipei_urban/wms'
+  if (import.meta.env.VITE_GEOSERVER_URL) {
+    return import.meta.env.VITE_GEOSERVER_URL
   }
-  // TODO: 上線前在此補齊正式站 URL
   return 'http://localhost:8090/geoserver/taipei_urban/wms'
 }
 

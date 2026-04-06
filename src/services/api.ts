@@ -38,7 +38,7 @@ interface GeoJsonApiResponse<T> {
  * 預設連接本地開發伺服器,正式環境需修改 baseURL
  */
 export const client = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000/taipei/api',
   headers: {
   'Content-Type': 'application/json',
   },
