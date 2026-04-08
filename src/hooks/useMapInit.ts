@@ -38,10 +38,11 @@ const TILE_URLS: Record<'light' | 'satellite', string> = {
  * 優先使用環境變數 VITE_GEOSERVER_URL，未設定時 fallback 至本機開發位址
  */
 function resolveGeoServerUrl(): string {
-  if (import.meta.env.VITE_GEOSERVER_URL) {
-    return import.meta.env.VITE_GEOSERVER_URL
+  const hostname = window.location.hostname
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost/geoserver/taipei_urban/wms'
   }
-  return 'http://localhost:8090/geoserver/taipei_urban/wms'
+  return 'https://api.vividstudio.net/geoserver/taipei_urban/wms'
 }
 
 export const GEOSERVER_WMS_URL = resolveGeoServerUrl()
