@@ -17,7 +17,7 @@ import { LineString } from 'ol/geom'
 import { Style, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
 import { getNarrowAlleys } from '../services/urbanApi'
-import { getRiskInfo } from '../types/geo'
+
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
 
@@ -82,7 +82,6 @@ export function useNarrowAlleyLayer(
       source: new VectorSource({ features }),
       style: (feature) => {
         const width = feature.get('width_m')
-        const riskInfo = getRiskInfo(width, 'actual')
         const actualColor =
           width < 3.5
             ? 'rgba(252, 33, 33, 0.94)'
@@ -97,7 +96,7 @@ export function useNarrowAlleyLayer(
           }),
           new Style({
             stroke: new Stroke({
-              color: actualColor || riskInfo.color,
+              color: actualColor,
               width: 3,
             }),
           }),

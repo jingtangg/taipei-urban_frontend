@@ -17,7 +17,7 @@ import { LineString } from 'ol/geom'
 import { Style, Stroke } from 'ol/style'
 import { fromLonLat } from 'ol/proj'
 import { getRoads } from '../services/urbanApi'
-import { getRiskInfo } from '../types/geo'
+
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
 
@@ -79,7 +79,6 @@ export function useRoadLayer(
       source: new VectorSource({ features }),
       style: (feature) => {
         const width = feature.get('width_m')
-        const riskInfo = getRiskInfo(width, 'planned')
         const plannedColor =
           width < 3.5
             ? 'rgba(254, 174, 218, 0.72)'
@@ -95,7 +94,7 @@ export function useRoadLayer(
           }),
           new Style({
             stroke: new Stroke({
-              color: plannedColor || riskInfo.color,
+              color: plannedColor,
               width: 2.5,
               lineDash: [8, 5],
             }),

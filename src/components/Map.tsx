@@ -110,11 +110,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           hitTolerance: 10  // 增加點擊容差範圍（像素）
         })
 
-        // 過濾掉行政區相關圖層，優先處理其他圖層（道路、消防栓、消防局）
+        // 過濾掉行政區標記，優先處理其他圖層（道路、消防栓、消防局）
         const nonDistrictFeature = features.find(f => {
           const type = f.getProperties().type
-          // 如果這東西不是區域邊界，也不是標記，那就是我要的資料
-          return type !== 'district_boundary' && type !== 'district_marker'
+          return type !== 'district_marker'
         })
         // 如果有抓到 道路、消防栓、消防局 先取他，如果都沒有幫我取features[0](行政區)
         const feature = nonDistrictFeature || features[0]
@@ -133,17 +132,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
             }
           }
 
-          // B.處理行政區邊界
-          else if (props.type === 'district_boundary') {
-            // 第一層（zoom < 15）：點邊界 → 放大該區域
-            if (currentZoom < DETAIL_ZOOM_THRESHOLD) {
-              if (onDistrictClick) {
-                onDistrictClick(props.name)
-              }
-            }
-          }
-
-          // 都市計畫窄巷 Popup
+          // B.都市計畫窄巷 Popup
           else if (props.type === 'road') {
             const width = props.width_m
             let riskLevel = '一般'

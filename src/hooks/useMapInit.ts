@@ -47,25 +47,6 @@ function resolveGeoServerUrl(): string {
 
 export const GEOSERVER_WMS_URL = resolveGeoServerUrl()
 
-/**
- * 建立 GeoServer WMS 圖層
- * 對應公司 mapMixin.js 的 addWMSLarerToMap()
- *
- * @param wmsLayerName  GeoServer 的圖層名稱，格式為 'workspace:layerName'
- * @param id            圖層 id，供後續查找/切換用
- * @param visible       預設是否顯示
- */
-export function createWMSLayer(wmsLayerName: string, id: string, visible = true): TileLayer {
-  return new TileLayer({
-    source: new TileWMS({
-      url: GEOSERVER_WMS_URL,
-      params: { LAYERS: wmsLayerName, TILED: true },
-      serverType: 'geoserver',
-    }),
-    visible,
-    properties: { id },
-  })
-}
 
 /**
  * 初始化 OpenLayers 地圖
