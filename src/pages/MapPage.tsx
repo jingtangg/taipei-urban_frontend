@@ -24,8 +24,8 @@ export default function MapPage() {
   const [selectedDistrict, setSelectedDistrict] = useState('all')
   const [baseLayer, setBaseLayer] = useState<'light' | 'satellite'>('light')
   const [layers, setLayers] = useState({roads: true, narrowAlleys: true, hydrants: true, stations: true, districts: true})
-  const [isLeftOpen,  setIsLeftOpen]  = useState(true)
-  const [isRightOpen, setIsRightOpen] = useState(true)
+  const [isLeftOpen,  setIsLeftOpen]  = useState(window.innerWidth >= 1024)
+  const [isRightOpen, setIsRightOpen] = useState(window.innerWidth >= 1024)
   const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標的 游標位置
   const mapRef = useRef<MapViewHandle>(null)
   const [districts, setDistricts] = useState<District[]>([])
@@ -74,7 +74,7 @@ export default function MapPage() {
         {isLeftOpen && (
           <motion.aside
             initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }}
-            className="w-[300px] h-full bg-black border-r border-[#00ff41] z-30 flex flex-col shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+            className="fixed lg:relative w-[300px] h-full bg-black border-r border-[#00ff41] z-50 lg:z-30 flex flex-col shadow-[0_0_15px_rgba(0,255,65,0.2)]"
           >
             <div className="p-6 border-b border-[#00ff41] bg-[#00ff41]/5">
               <div className="flex items-center gap-2 text-[#00ff41] mb-2">
@@ -211,6 +211,13 @@ export default function MapPage() {
                 </section>
               </div>
             </div>
+            {/* Mobile Close Button Overlay */}
+            <button
+              onClick={() => setIsLeftOpen(false)}
+              className="lg:hidden absolute top-4 right-[-40px] z-50 terminal-btn p-1 bg-black/80 border border-[#00ff41]"
+            >
+              <ChevronLeft size={18} />
+            </button>
           </motion.aside>
         )}
       </AnimatePresence>
@@ -219,7 +226,7 @@ export default function MapPage() {
       <main className="relative flex-1 h-full bg-black overflow-hidden">
         <button
           onClick={() => setIsLeftOpen(!isLeftOpen)}
-          className="absolute top-4 left-4 z-40 terminal-btn p-1 bg-black/80"
+          className={`absolute top-4 left-4 z-40 terminal-btn p-1 bg-black/80 transition-opacity ${isLeftOpen ? 'opacity-0 pointer-events-none lg:opacity-100 lg:pointer-events-auto' : 'opacity-100'}`}
         >
           {isLeftOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
         </button>
@@ -237,7 +244,7 @@ export default function MapPage() {
 
         <button
           onClick={() => setIsRightOpen(!isRightOpen)}
-          className="absolute top-4 right-4 z-40 terminal-btn p-1 bg-black/80"
+          className={`absolute top-4 right-4 z-40 terminal-btn p-1 bg-black/80 transition-opacity ${isRightOpen ? 'opacity-0 pointer-events-none lg:opacity-100 lg:pointer-events-auto' : 'opacity-100'}`}
         >
           {isRightOpen ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
@@ -262,7 +269,7 @@ export default function MapPage() {
         {isRightOpen && (
           <motion.aside
             initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }}
-            className="w-[300px] h-full bg-black border-l border-[#00ff41] z-30 flex flex-col shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+            className="fixed right-0 lg:relative w-[300px] h-full bg-black border-l border-[#00ff41] z-50 lg:z-30 flex flex-col shadow-[0_0_15px_rgba(0,255,65,0.2)]"
           >
             <div className="p-6 border-b border-[#00ff41] bg-[#00ff41]/5">
               <div className="flex items-center gap-2 text-[#00ff41]">
@@ -391,6 +398,13 @@ export default function MapPage() {
                 </div>
               </section>
             </div>
+            {/* Mobile Close Button Overlay */}
+            <button
+              onClick={() => setIsRightOpen(false)}
+              className="lg:hidden absolute top-4 left-[-40px] z-50 terminal-btn p-1 bg-black/80 border border-[#00ff41]"
+            >
+              <ChevronRight size={18} />
+            </button>
           </motion.aside>
         )}
       </AnimatePresence>
