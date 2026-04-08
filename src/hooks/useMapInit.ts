@@ -40,7 +40,7 @@ const TILE_URLS: Record<'light' | 'satellite', string> = {
 function resolveGeoServerUrl(): string {
   const hostname = window.location.hostname
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost/geoserver/taipei_urban/wms'
+    return 'http://localhost:8090/geoserver/taipei_urban/wms'
   }
   return 'https://api.vividstudio.net/geoserver/taipei_urban/wms'
 }
