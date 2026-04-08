@@ -76,14 +76,14 @@ export const getDistrictList = () =>
   )
 
 /**
- * 取得行政區完整資料（含幾何邊界）
- * 用於地圖圖層顯示
+ * 取得行政區元資料（中心點座標、窄巷密度）
+ * 用於地圖文字標籤渲染與行政區縮放動畫
  */
-export const getDistricts = () =>
+export const getDistrictMetadata = () =>
   apiQuery<District[]>(
-    '/districts/geojson',
+    '/districts/metadata',
     {},
-    '無法取得行政區資料',
+    '無法取得行政區元資料',
     'GET',
   )
 

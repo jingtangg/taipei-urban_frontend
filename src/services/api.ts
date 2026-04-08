@@ -23,15 +23,6 @@ interface ApiResponse<T> {
   errMsg?: string
 }
 
-/**
- * GeoJSON API 回傳格式
- * 用於 /districts/geojson 等回傳 GeoJSON 的端點
- */
-interface GeoJsonApiResponse<T> {
-  success: boolean
-  data: T
-  message?: string
-}
 
 /**
  * Axios HTTP 客戶端實例

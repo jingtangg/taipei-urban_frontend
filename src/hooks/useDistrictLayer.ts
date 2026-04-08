@@ -12,7 +12,7 @@
  * - 文字標籤：前端 VectorLayer，使用 narrowDensity 決定邊框顏色
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Map from "ol/Map";
 import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
@@ -23,7 +23,6 @@ import { Feature } from "ol";
 import { Point } from "ol/geom";
 import { Style, Text, Fill, Stroke } from "ol/style";
 import { fromLonLat } from "ol/proj";
-import { getDistricts } from "../services/urbanApi";
 import type { District } from "../types/geo";
 import { GEOSERVER_WMS_URL } from "./useMapInit";
 import { useZoomLevel } from "./useZoomLevel";
@@ -58,15 +57,11 @@ export function useDistrictLayer(
   map: Map | null,
   visible: boolean,
   selectedDistrict: string = "all",
+  districts: District[] = [],
 ) {
   const wmsLayerRef = useRef<TileLayer<TileWMS> | null>(null);
   const markerLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
-  const [districts, setDistricts] = useState<District[]>([]);
   const currentZoom = useZoomLevel(map);
-
-  useEffect(() => {
-    getDistricts().then(setDistricts).catch(console.error);
-  }, []);
 
   // 建立並加入 WMS 圖層 + 文字標籤圖層
   useEffect(() => {

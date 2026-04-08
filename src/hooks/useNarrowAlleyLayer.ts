@@ -36,10 +36,13 @@ export function useNarrowAlleyLayer(
   const currentZoom = useZoomLevel(map)
   const [alleys, setAlleys] = useState<any[]>([])
 
-  // 載入窄巷資料，district 改變時重新 fetch
+  // 載入窄巷資料，district 改變時重新 fetch（全區總覽時不載入）
   useEffect(() => {
-    const district = selectedDistrict === 'all' ? undefined : selectedDistrict
-    getNarrowAlleys(district).then(setAlleys).catch(console.error)
+    if (selectedDistrict === 'all') {
+      setAlleys([])
+      return
+    }
+    getNarrowAlleys(selectedDistrict).then(setAlleys).catch(console.error)
   }, [selectedDistrict])
 
   // 建立並加入圖層

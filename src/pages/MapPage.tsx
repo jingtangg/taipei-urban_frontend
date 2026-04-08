@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {Terminal, Cpu, Database, Activity, ChevronLeft, ChevronRight, Map as MapIcon, Layers, Maximize} from 'lucide-react'
 import MapView, { type MapViewHandle } from '../components/Map'
-import { getDistricts, getNarrowAlleyStatistics, getDistrictRankings, getHydrantStatistics } from '../services/urbanApi'
+import { getDistrictMetadata, getNarrowAlleyStatistics, getDistrictRankings, getHydrantStatistics } from '../services/urbanApi'
 import type { District, NarrowAlleyStatistics, DistrictRanking, HydrantStatistics } from '../types/geo'
 
 const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
@@ -35,7 +35,7 @@ export default function MapPage() {
 
   // 載入行政區資料
   useEffect(() => {
-    getDistricts().then(setDistricts).catch(console.error)
+    getDistrictMetadata().then(setDistricts).catch(console.error)
   }, [])
 
   // 載入窄巷統計（根據選擇的行政區）
@@ -237,6 +237,7 @@ export default function MapPage() {
             baseLayer={baseLayer}
             selectedDistrict={selectedDistrict}
             layers={layers}
+            districts={districts}
             onMouseMove={c => setCoords(c)}
             onDistrictClick={districtName => setSelectedDistrict(districtName)}
           />

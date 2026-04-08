@@ -18,6 +18,7 @@ import { Point, LineString, Polygon } from 'ol/geom'
 // Hooks
 import { useMapInit } from '../hooks/useMapInit'
 import { useDistrictLayer, DETAIL_ZOOM_THRESHOLD, DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from '../hooks/useDistrictLayer'
+import type { District } from '../types/geo'
 import { useRoadLayer } from '../hooks/useRoadLayer'
 import { useNarrowAlleyLayer } from '../hooks/useNarrowAlleyLayer'
 import { useFireLayers } from '../hooks/useFireLayers'
@@ -37,12 +38,13 @@ interface MapViewProps {
     stations: boolean
     districts: boolean
   }
+  districts: District[]
   onMouseMove?: (coords: { x: number; y: number }) => void
   onDistrictClick?: (districtName: string) => void
 }
 
 const MapView = forwardRef<MapViewHandle, MapViewProps>(
-  ({ selectedDistrict, baseLayer, layers, onMouseMove, onDistrictClick }, ref) => {
+  ({ selectedDistrict, baseLayer, layers, districts, onMouseMove, onDistrictClick }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const popupRef = useRef<HTMLDivElement>(null)
     const overlayRef = useRef<Overlay | null>(null)
@@ -54,10 +56,10 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
     const currentZoom = useZoomLevel(mapRef.current)
 
     // ========== 各功能圖層 ==========
-    useDistrictLayer(mapRef.current, layers.districts, selectedDistrict)
+    useDistrictLayer(mapRef.current, layers.districts, selectedDistrict, districts)
     useRoadLayer(mapRef.current, layers.roads, selectedDistrict)
     useNarrowAlleyLayer(mapRef.current, layers.narrowAlleys, selectedDistrict)
-    useFireLayers(mapRef.current, {showHydrants: layers.hydrants, showStations: layers.stations, district: selectedDistrict})
+    useFireLayers(mapRef.current, layers.hydrants, layers.stations, selectedDistrict)
 
     // ========== Popup Overlay 初始化 ==========
     useEffect(() => {

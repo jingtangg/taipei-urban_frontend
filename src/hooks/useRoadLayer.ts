@@ -36,10 +36,13 @@ export function useRoadLayer(
   const currentZoom = useZoomLevel(map)
   const [roads, setRoads] = useState<any[]>([])
 
-  // 載入道路資料，district 改變時重新 fetch
+  // 載入道路資料，district 改變時重新 fetch（全區總覽時不載入）
   useEffect(() => {
-    const district = selectedDistrict === 'all' ? undefined : selectedDistrict
-    getRoads(district).then(setRoads).catch(console.error)
+    if (selectedDistrict === 'all') {
+      setRoads([])
+      return
+    }
+    getRoads(selectedDistrict).then(setRoads).catch(console.error)
   }, [selectedDistrict])
 
   // 建立並加入圖層

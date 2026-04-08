@@ -20,20 +20,18 @@ import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
 import { getFireStations, getFireHydrants } from '../services/urbanApi'
 
-interface UseFireLayersOptions {
-  showHydrants: boolean   // 是否顯示消防栓
-  showStations: boolean   // 是否顯示消防局
-  district?: string       // 行政區篩選，'all' 或 undefined 表示全部
-}
-
 /**
  * 消防設施圖層管理 Hook
  * @param map - OpenLayers Map 實例
- * @param options - 顯示選項
+ * @param showHydrants - 是否顯示消防栓
+ * @param showStations - 是否顯示消防局
+ * @param selectedDistrict - 選中的行政區名稱，'all' 表示顯示全部
  */
 export function useFireLayers(
   map: Map | null,
-  options: UseFireLayersOptions
+  showHydrants: boolean,
+  showStations: boolean,
+  selectedDistrict: string = 'all'
 ) {
   const hydrantLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const stationLayerRef = useRef<VectorLayer<VectorSource> | null>(null)
@@ -41,12 +39,16 @@ export function useFireLayers(
   const [stations, setStations] = useState<any[]>([])
   const [hydrants, setHydrants] = useState<any[]>([])
 
-  // 載入消防隊與消防栓資料，district 改變時重新 fetch
+  // 載入消防隊與消防栓資料，district 改變時重新 fetch（全區總覽時不載入）
   useEffect(() => {
-    const district = options.district === 'all' ? undefined : options.district
-    getFireStations(district).then(setStations).catch(console.error)
-    getFireHydrants(district).then(setHydrants).catch(console.error)
-  }, [options.district])
+    if (selectedDistrict === 'all' || !selectedDistrict) {
+      setStations([])
+      setHydrants([])
+      return
+    }
+    getFireStations(selectedDistrict).then(setStations).catch(console.error)
+    getFireHydrants(selectedDistrict).then(setHydrants).catch(console.error)
+  }, [selectedDistrict])
 
   // 建立並加入圖層
   useEffect(() => {
@@ -173,8 +175,8 @@ export function useFireLayers(
     stationLayerRef.current = stationLayer
     fireGroup.getLayers().push(hydrantLayer)
     fireGroup.getLayers().push(stationLayer)
-    hydrantLayer.setVisible(options.showHydrants && currentZoom >= DETAIL_ZOOM_THRESHOLD) // 立即同步可見度，避免資料載入比 zoom 動畫慢時圖層不顯示
-    stationLayer.setVisible(options.showStations && currentZoom >= DETAIL_ZOOM_THRESHOLD)
+    hydrantLayer.setVisible(showHydrants && currentZoom >= DETAIL_ZOOM_THRESHOLD) // 立即同步可見度，避免資料載入比 zoom 動畫慢時圖層不顯示
+    stationLayer.setVisible(showStations && currentZoom >= DETAIL_ZOOM_THRESHOLD)
 
     return () => {
       fireGroup.getLayers().remove(hydrantLayer)
@@ -189,20 +191,20 @@ export function useFireLayers(
   // Zoom < 15: 隱藏（總覽層）, Zoom ≥ 15: 顯示（詳細層）
   useEffect(() => {
     if (hydrantLayerRef.current) {
-      const shouldShow = options.showHydrants && currentZoom >= DETAIL_ZOOM_THRESHOLD
+      const shouldShow = showHydrants && currentZoom >= DETAIL_ZOOM_THRESHOLD
       hydrantLayerRef.current.setVisible(shouldShow)
     }
-  }, [options.showHydrants, currentZoom])
+  }, [showHydrants, currentZoom])
 
   // 控制消防局顯示/隱藏：基於 zoom level
   // Zoom < 15: 隱藏（總覽層）
   // Zoom ≥ 15: 顯示（詳細層）
   useEffect(() => {
     if (stationLayerRef.current) {
-      const shouldShow = options.showStations && currentZoom >= DETAIL_ZOOM_THRESHOLD
+      const shouldShow = showStations && currentZoom >= DETAIL_ZOOM_THRESHOLD
       stationLayerRef.current.setVisible(shouldShow)
     }
-  }, [options.showStations, currentZoom])
+  }, [showStations, currentZoom])
 
   return { hydrantLayerRef, stationLayerRef }
 }
