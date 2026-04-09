@@ -15,12 +15,12 @@ import Map from 'ol/Map'
 import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-import { Style, Stroke } from 'ol/style'
 import { getRoads } from '../services/urbanApi'
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
 import { useApi } from './useApi'
 import { toRoadFeatures } from '../utils/geoTransform'
+import { roadStyle } from '../styles/layerStyles'
 import type { RoadFeatureProps } from '../types/geo'
 
 /**
@@ -61,14 +61,7 @@ export function useRoadLayer(
 
     const layer = new VectorLayer({
       source: new VectorSource({ features: toRoadFeatures(roads) }),
-      style: (feature) => {
-        const width = feature.get('width_m')
-        const plannedColor = width < 3.5 ? 'rgba(254, 174, 218, 0.72)' : 'rgba(255, 248, 115, 0.68)'
-        return [
-          new Style({ stroke: new Stroke({ color: 'rgba(8, 12, 10, 0.55)', width: 3.6, lineDash: [8, 5] }) }),
-          new Style({ stroke: new Stroke({ color: plannedColor, width: 2.5, lineDash: [8, 5] }) }),
-        ]
-      },
+      style: roadStyle,
       properties: { name: '都市計畫窄巷（虛線）' },
       visible: false,
       zIndex: 5,

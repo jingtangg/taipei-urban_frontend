@@ -15,12 +15,12 @@ import Map from 'ol/Map'
 import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-import { Style, Stroke } from 'ol/style'
 import { getNarrowAlleys } from '../services/urbanApi'
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
 import { useApi } from './useApi'
 import { toNarrowAlleyFeatures } from '../utils/geoTransform'
+import { narrowAlleyStyle } from '../styles/layerStyles'
 import type { NarrowAlleyFeatureProps } from '../types/geo'
 
 /**
@@ -61,14 +61,7 @@ export function useNarrowAlleyLayer(
 
     const layer = new VectorLayer({
       source: new VectorSource({ features: toNarrowAlleyFeatures(alleys) }),
-      style: (feature) => {
-        const width = feature.get('width_m')
-        const actualColor = width < 3.5 ? 'rgba(252, 33, 33, 0.94)' : 'rgba(255, 170, 0, 0.92)'
-        return [
-          new Style({ stroke: new Stroke({ color: 'rgba(8, 12, 10, 0.62)', width: 4.2 }) }),
-          new Style({ stroke: new Stroke({ color: actualColor, width: 3 }) }),
-        ]
-      },
+      style: narrowAlleyStyle,
       properties: { name: '消防局實測窄巷' },
       visible: false,
       zIndex: 10,

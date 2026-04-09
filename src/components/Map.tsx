@@ -23,6 +23,7 @@ import { useRoadLayer } from '../hooks/useRoadLayer'
 import { useNarrowAlleyLayer } from '../hooks/useNarrowAlleyLayer'
 import { useFireLayers } from '../hooks/useFireLayers'
 import { useZoomLevel } from '../hooks/useZoomLevel'
+import { getRiskInfo } from '../utils/riskUtils'
 
 export interface MapViewHandle {
   zoomToTaipei: () => void
@@ -135,10 +136,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           // B.都市計畫窄巷 Popup
           else if (props.type === 'road') {
             const width = props.width_m
-            let riskLevel = '一般'
-            let riskDesc = '正常通行'
-            if (width < 3.5) { riskLevel = '極高風險', riskDesc = '消防車無法通行' } 
-            else if (width < 6) { riskLevel = '高風險', riskDesc = '通行受限' }
+            const { level: riskLevel, desc: riskDesc } = getRiskInfo(width)
 
             popupContent = createPopupHTML(
               '#00ff41',
@@ -159,15 +157,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
             const alleyName = props.alley_name || '未知巷道'
 
             // 計算風險等級
-            let riskLevel = '一般'
-            let riskDesc = '正常通行'
-            if (width < 3.5) {
-              riskLevel = '極高風險'
-              riskDesc = '消防車無法通行'
-            } else if (width < 6) {
-              riskLevel = '高風險'
-              riskDesc = '通行受限'
-            }
+            const { level: riskLevel, desc: riskDesc } = getRiskInfo(width)
 
             const warnings = []
             const highWarn = '<span style="display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;border:1px solid #ff4444;border-radius:9999px;color:#ff4444;font-size:9px;font-weight:bold;box-shadow:0 0 5px #ff444466;vertical-align:middle">!!</span>'
