@@ -43,8 +43,10 @@ export interface NarrowAlleyFeatureProps {
  */
 export interface FireHydrantFeatureProps {
   id: number
-  district: string    // 所屬行政區
-  address?: string    // 設置地址
+  district: string                          // 所屬行政區
+  address?: string                          // 設置地址
+  type?: 'aboveground' | 'underground'      // 消防栓種類（地上式 / 地下式）
+  geometry: { coordinates: number[] }       // GeoJSON Point
 }
 
 /**
@@ -55,7 +57,9 @@ export interface FireStationFeatureProps {
   id: number
   name: string        // 消防隊名稱
   district: string    // 轄區
+  address?: string    // 地址
   phone?: string      // 聯絡電話
+  geometry: { coordinates: number[] }   // GeoJSON Point
 }
 
 // ════════════════════════════════════════════════════════════

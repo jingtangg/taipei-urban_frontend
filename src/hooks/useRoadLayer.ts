@@ -2,30 +2,32 @@
  * 道路圖層管理 Hook
  *
  * 職責:
- * - 管理道路寬度圖層的建立與顯示
+ * - 管理都市計畫道路寬度圖層的建立與顯示
  * - 依據道路寬度分類套用不同顏色 (窄巷風險視覺化)
- * - 支援按行政區篩選道路資料
+ *
+ * 架構分層:
+ * - 資料擷取：useApi（含 race condition 保護）
+ * - 座標轉換：geoTransform.ts（JSON → OL Feature，含 width_m < 6 篩選）
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import Map from 'ol/Map'
 import LayerGroup from 'ol/layer/Group'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
-import { Feature } from 'ol'
-import { LineString } from 'ol/geom'
 import { Style, Stroke } from 'ol/style'
-import { fromLonLat } from 'ol/proj'
 import { getRoads } from '../services/urbanApi'
-
 import { DETAIL_ZOOM_THRESHOLD } from './useDistrictLayer'
 import { useZoomLevel } from './useZoomLevel'
+import { useApi } from './useApi'
+import { toRoadFeatures } from '../utils/geoTransform'
+import type { RoadFeatureProps } from '../types/geo'
 
 /**
  * 道路圖層管理 Hook
- * @param map - OpenLayers Map 實例
- * @param visible - 是否顯示圖層
- * @param selectedDistrict - 選中的行政區名稱,'all' 表示顯示全部
+ * @param map              - OpenLayers Map 實例
+ * @param visible          - 是否顯示圖層
+ * @param selectedDistrict - 選中的行政區名稱,'all' 表示不載入
  */
 export function useRoadLayer(
   map: Map | null,
@@ -34,22 +36,20 @@ export function useRoadLayer(
 ) {
   const layerRef = useRef<VectorLayer<VectorSource> | null>(null)
   const currentZoom = useZoomLevel(map)
-  const [roads, setRoads] = useState<any[]>([])
 
-  // 載入道路資料，district 改變時重新 fetch（全區總覽時不載入）
-  useEffect(() => {
-    if (selectedDistrict === 'all') {
-      setRoads([])
-      return
-    }
-    getRoads(selectedDistrict).then(setRoads).catch(console.error)
-  }, [selectedDistrict])
+  // ========== 資料擷取 ==========
+  const roadFn = useCallback(
+    () => selectedDistrict === 'all'
+      ? Promise.resolve([] as RoadFeatureProps[])
+      : getRoads(selectedDistrict),
+    [selectedDistrict],
+  )
+  const { data: roads } = useApi(roadFn, [] as RoadFeatureProps[])
 
-  // 建立並加入圖層
+  // ========== 第一階段：圖層創建 ==========
   useEffect(() => {
     if (!map || roads.length === 0) return
 
-    // 找到 roadsGroup 容器
     const roadsGroup = map.getLayers().getArray().find(
       layer => layer.get('id') === 'roads_map'
     ) as LayerGroup
@@ -59,46 +59,14 @@ export function useRoadLayer(
       return
     }
 
-    // 建立 Features（只保留 width_m < 6 的道路作為窄巷虛線底圖）
-    const features = roads
-      .filter(r => r.width_m < 6)
-      .map(r => {
-        const coords = r.geometry.coordinates.map((c: number[]) => fromLonLat([c[0], c[1]]))
-        const line = new LineString(coords)
-        return new Feature({
-          geometry: line,
-          road_width: r.road_width,
-          width_m: r.width_m,
-          width_category: r.width_category,
-          type: 'road',
-        })
-      })
-
-    // ========== 第一階段：圖層創建 ==========
     const layer = new VectorLayer({
-      source: new VectorSource({ features }),
+      source: new VectorSource({ features: toRoadFeatures(roads) }),
       style: (feature) => {
         const width = feature.get('width_m')
-        const plannedColor =
-          width < 3.5
-            ? 'rgba(254, 174, 218, 0.72)'
-            : 'rgba(255, 248, 115, 0.68)'
-
+        const plannedColor = width < 3.5 ? 'rgba(254, 174, 218, 0.72)' : 'rgba(255, 248, 115, 0.68)'
         return [
-          new Style({
-            stroke: new Stroke({
-              color: 'rgba(8, 12, 10, 0.55)',
-              width: 3.6,
-              lineDash: [8, 5],
-            }),
-          }),
-          new Style({
-            stroke: new Stroke({
-              color: plannedColor,
-              width: 2.5,
-              lineDash: [8, 5],
-            }),
-          }),
+          new Style({ stroke: new Stroke({ color: 'rgba(8, 12, 10, 0.55)', width: 3.6, lineDash: [8, 5] }) }),
+          new Style({ stroke: new Stroke({ color: plannedColor, width: 2.5, lineDash: [8, 5] }) }),
         ]
       },
       properties: { name: '都市計畫窄巷（虛線）' },
@@ -108,8 +76,8 @@ export function useRoadLayer(
 
     layerRef.current = layer
     roadsGroup.getLayers().push(layer)
-    layer.setVisible(visible && currentZoom >= DETAIL_ZOOM_THRESHOLD) // 立即同步可見度，避免資料載入比 zoom 動畫慢時圖層不顯示
-
+    // 立即同步可見度，避免資料載入比 zoom 動畫慢時圖層不顯示
+    layer.setVisible(visible && currentZoom >= DETAIL_ZOOM_THRESHOLD)
 
     return () => {
       roadsGroup.getLayers().remove(layer)
@@ -118,12 +86,9 @@ export function useRoadLayer(
   }, [map, roads])
 
   // ========== 第二階段：動態控制 ==========
-  // 控制顯示/隱藏：基於 zoom level
-  // Zoom < 15: 隱藏（總覽層）, Zoom ≥ 15: 顯示（詳細層）
   useEffect(() => {
     if (layerRef.current) {
-      const shouldShow = visible && currentZoom >= DETAIL_ZOOM_THRESHOLD
-      layerRef.current.setVisible(shouldShow)
+      layerRef.current.setVisible(visible && currentZoom >= DETAIL_ZOOM_THRESHOLD)
     }
   }, [visible, currentZoom])
 
