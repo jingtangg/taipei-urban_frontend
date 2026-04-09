@@ -17,7 +17,8 @@ import { Point, LineString, Polygon } from 'ol/geom'
 
 // Hooks
 import { useMapInit } from '../hooks/useMapInit'
-import { useDistrictLayer, DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from '../hooks/useDistrictLayer'
+import { useDistrictLayer } from '../hooks/useDistrictLayer'
+import { DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from '../constants/mapConfig'
 import type { District } from '../types/geo'
 import { useRoadLayer } from '../hooks/useRoadLayer'
 import { useNarrowAlleyLayer } from '../hooks/useNarrowAlleyLayer'

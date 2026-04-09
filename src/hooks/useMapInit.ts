@@ -18,9 +18,9 @@ import Map from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
 import LayerGroup from 'ol/layer/Group'
-import { XYZ, TileWMS } from 'ol/source'
+import { XYZ } from 'ol/source'
 import { defaults as defaultControls } from 'ol/control'
-import { DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from './useDistrictLayer'
+import { DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from '../constants/mapConfig'
 
 /**
  * 底圖來源 URL
@@ -32,20 +32,6 @@ const TILE_URLS: Record<'light' | 'satellite', string> = {
   light:     'https://tile.openstreetmap.org/{z}/{x}/{y}.png' ,
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 }
-
-/**
- * 讀取 GeoServer WMS endpoint
- * 優先使用環境變數 VITE_GEOSERVER_URL，未設定時 fallback 至本機開發位址
- */
-function resolveGeoServerUrl(): string {
-  const hostname = window.location.hostname
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:8090/geoserver/taipei_urban/wms'
-  }
-  return 'https://api.vividstudio.net/geoserver/taipei_urban/wms'
-}
-
-export const GEOSERVER_WMS_URL = resolveGeoServerUrl()
 
 
 /**

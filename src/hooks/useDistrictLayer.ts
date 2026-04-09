@@ -24,18 +24,9 @@ import { Point } from "ol/geom";
 import { Style, Text, Fill, Stroke } from "ol/style";
 import { fromLonLat } from "ol/proj";
 import type { District } from "../types/geo";
-import { GEOSERVER_WMS_URL } from "./useMapInit";
+import { GEOSERVER_WMS_URL, DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM, DETAIL_ZOOM_THRESHOLD } from "../constants/mapConfig";
 import { useZoomLevel } from "./useZoomLevel";
 
-export const DISTRICT_OVERVIEW_CENTER = fromLonLat([121.5654, 25.065]);
-export const DISTRICT_OVERVIEW_ZOOM = 12.2;
-
-/**
- * 詳細圖層顯示門檻
- * Zoom < 15: 只顯示行政區邊界（總覽層）
- * Zoom ≥ 15: 顯示窄巷 + 消防栓 + 消防局（詳細層）
- */
-export const DETAIL_ZOOM_THRESHOLD = 15;
 
 /**
  * 行政區圖層管理 Hook
