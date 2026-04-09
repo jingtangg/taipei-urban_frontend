@@ -6,6 +6,21 @@
  * - 確保前端與後端 API 的資料格式一致性
  * - 提供型別安全的地理資訊處理
  */
+
+// ════════════════════════════════════════════════════════════
+// GeoJSON 幾何型別
+// ════════════════════════════════════════════════════════════
+
+interface GeoJSONPoint {
+  type: 'Point'
+  coordinates: [number, number]
+}
+
+interface GeoJSONLineString {
+  type: 'LineString'
+  coordinates: [number, number][]
+}
+
 // ════════════════════════════════════════════════════════════
 // 圖層圖徵型別 - 對應後端資料表結構
 // ════════════════════════════════════════════════════════════
@@ -19,7 +34,7 @@ export interface RoadFeatureProps {
   road_width: string                          // 原始計畫路寬字串，如 "8M"
   width_m: number                             // 解析後的數值，如 8.0
   width_category: 'narrow' | 'mid' | 'wide'  // 寬度分級
-  geometry: any                               // GeoJSON LineString
+  geometry: GeoJSONLineString
 }
 
 /**
@@ -34,7 +49,7 @@ export interface NarrowAlleyFeatureProps {
   width_m: number                   // 實際寬度
   road_width: number | null         // 都市計畫寬度
   snap_distance_m: number | null    // 吸附距離
-  geometry: any                     // GeoJSON LineString
+  geometry: GeoJSONLineString
 }
 
 /**
@@ -46,7 +61,7 @@ export interface FireHydrantFeatureProps {
   district: string                          // 所屬行政區
   address?: string                          // 設置地址
   type?: 'aboveground' | 'underground'      // 消防栓種類（地上式 / 地下式）
-  geometry: { coordinates: number[] }       // GeoJSON Point
+  geometry: GeoJSONPoint
 }
 
 /**
@@ -59,8 +74,19 @@ export interface FireStationFeatureProps {
   district: string    // 轄區
   address?: string    // 地址
   phone?: string      // 聯絡電話
-  geometry: { coordinates: number[] }   // GeoJSON Point
+  geometry: GeoJSONPoint
 }
+
+// ════════════════════════════════════════════════════════════
+// Popup 屬性 — OL getProperties() 邊界的型別包層
+// ════════════════════════════════════════════════════════════
+
+export type PopupFeatureProps =
+  | { type: 'district_marker'; name: string }
+  | { type: 'road';            width_m: number }
+  | { type: 'narrow_alley';   width_m: number; road_width: number | null; snap_distance_m: number | null; alley_name: string; category: string }
+  | { type: 'hydrant';         hydrant_type: 'aboveground' | 'underground'; district: string }
+  | { type: 'station';         name: string; address: string }
 
 // ════════════════════════════════════════════════════════════
 // 行政區型別

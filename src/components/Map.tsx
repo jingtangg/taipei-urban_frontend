@@ -14,12 +14,14 @@
 import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
 import Overlay from 'ol/Overlay'
 import { Point, LineString, Polygon } from 'ol/geom'
+import type MapBrowserEvent from 'ol/MapBrowserEvent'
+import type { FeatureLike } from 'ol/Feature'
 
 // Hooks
 import { useMapInit } from '../hooks/useMapInit'
 import { useDistrictLayer } from '../hooks/useDistrictLayer'
 import { DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from '../constants/mapConfig'
-import type { District } from '../types/geo'
+import type { District, PopupFeatureProps } from '../types/geo'
 import { useRoadLayer } from '../hooks/useRoadLayer'
 import { useNarrowAlleyLayer } from '../hooks/useNarrowAlleyLayer'
 import { useFireLayers } from '../hooks/useFireLayers'
@@ -91,11 +93,11 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
     useEffect(() => {
       if (!mapRef.current) return
 
-      const handleClick = (evt: any) => {
+      const handleClick = (evt: MapBrowserEvent<PointerEvent>) => {
         const map = mapRef.current!
 
         // 收集點擊位置的所有 features（增加線段偵測範圍）
-        const features: any[] = []
+        const features: FeatureLike[] = []
         map.forEachFeatureAtPixel(evt.pixel, (f) => {
           features.push(f)
         }, {
@@ -111,7 +113,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
         const feature = nonDistrictFeature || features[0]
 
         if (feature) {
-          const props = feature.getProperties()
+          const props = feature.getProperties() as PopupFeatureProps
           const geom = feature.getGeometry()
 
           let popupContent = ''
