@@ -28,7 +28,7 @@ import { useFireLayers } from '../hooks/useFireLayers'
 import { useZoomLevel } from '../hooks/useZoomLevel'
 import { getRiskInfo } from '../utils/riskUtils'
 import { createPopupHTML, buildWarningHTML } from '../utils/popupUtils'
-import { COLOR_PRIMARY, COLOR_DANGER, COLOR_HIGH_RISK } from '../constants/colors'
+import { COLOR_PRIMARY } from '../constants/colors'
 
 export interface MapViewHandle {
   zoomToTaipei: () => void
@@ -153,7 +153,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
             const widthDiffText = roadWidth ? (roadWidth - width).toFixed(1) + 'm' : '未有計畫值，待確認'
 
             popupContent = createPopupHTML(
-              width < 3.5 ? COLOR_DANGER : COLOR_HIGH_RISK,
+              COLOR_PRIMARY,
               `實際路寬: ${width.toFixed(1)}M ] ${alleyName}`,
               `
                 <p>> 風險等級: ${riskLevel}</p>
@@ -184,7 +184,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           // 消防局 Popup
           else if (props.type === 'station') {
             popupContent = createPopupHTML(
-              COLOR_DANGER,
+              COLOR_PRIMARY,
               props.name,
               `
                 <p>> 地址: ${props.address}</p>
