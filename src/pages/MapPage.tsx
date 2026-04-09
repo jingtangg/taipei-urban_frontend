@@ -6,6 +6,7 @@ import { getDistrictList, getDistrictMetadata, getNarrowAlleyStatistics, getDist
 import type { District, DistrictBasic, NarrowAlleyStatistics, DistrictRanking, HydrantStatistics } from '../types/geo'
 import { useApi } from '../hooks/useApi'
 import { COLOR_DANGER, COLOR_WARNING } from '../constants/colors'
+import { WARN_WIDTH_HIGH, WARN_WIDTH_MID, WARN_DISTANCE_HIGH, WARN_DISTANCE_MID } from '../constants/dataQualityThresholds'
 
 const BADGE_BASE_STYLE = {
   display: 'inline-block', width: 14, height: 14, lineHeight: '13px',
@@ -389,11 +390,11 @@ export default function MapPage() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span style={{ ...BADGE_BASE_STYLE, border:`1px solid ${COLOR_DANGER}`, color:COLOR_DANGER, boxShadow:`0 0 5px ${COLOR_DANGER}66` }}>!!</span>
-                        <span className="opacity-80 text-[#00ff41]">路寬偏移 &gt;30m 或 定位偏移 &gt;50m</span>
+                        <span className="opacity-80 text-[#00ff41]">路寬偏移 &gt;{WARN_WIDTH_HIGH}m 或 定位偏移 &gt;{WARN_DISTANCE_HIGH}m</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span style={{ ...BADGE_BASE_STYLE, border:`1px solid ${COLOR_WARNING}`, color:COLOR_WARNING, boxShadow:`0 0 5px ${COLOR_WARNING}66` }}>!</span>
-                        <span className="opacity-80 text-[#00ff41]">路寬偏移 &gt;8m 或 定位偏移 &gt;30m</span>
+                        <span className="opacity-80 text-[#00ff41]">路寬偏移 &gt;{WARN_WIDTH_MID}m 或 定位偏移 &gt;{WARN_DISTANCE_MID}m</span>
                       </div>
                     </div>
                   </div>
