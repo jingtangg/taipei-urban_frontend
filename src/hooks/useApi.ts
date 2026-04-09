@@ -1,52 +1,38 @@
+import { useState, useEffect } from 'react'
+
 /**
- * hooks/useApi.ts — React 版的 fetchAndSet
- * 對應 publicMixin.js: fetchAndSet (L103-117)
+ * 通用 API 資料擷取 Hook
  *
- * Vue fetchAndSet 直接改 this[listField]，React 改成回傳 { data, loading, error }
- * 呼叫方用 execute() 觸發，與 fetchAndSet 的主動呼叫邏輯一致
+ * @param queryFn    - 回傳 Promise 的查詢函式；引用變更時自動重新 fetch
+ * @param initialData - 資料初始值（陣列傳 []，單物件傳 null）
+ * @returns { data, loading, error }
  *
- * ⚠️  queryFn 若依賴外部變數，呼叫端要用 useCallback 包住，
- *     否則 execute 會在每次 render 重建。
- *     例：useApi(useCallback(() => getRoads(district), [district]))
+ * @example
+ * // 固定查詢（不需要 deps）
+ * const { data: districts } = useApi(getDistrictMetadata, [])
+ *
+ * // 依賴參數查詢（用 useCallback 包裹讓引用跟著 deps 更新）
+ * const fn = useCallback(() => getNarrowAlleyStatistics(district), [district])
+ * const { data: stats } = useApi(fn, null)
  */
-
-import { useState, useCallback } from 'react'
-
-interface UseApiState<T> {
-  data: T[]
-  loading: boolean
-  error: string | null
-}
-
-interface UseApiReturn<T> extends UseApiState<T> {
-  execute: () => Promise<void>
-}
-
 export function useApi<T>(
-  queryFn: () => Promise<T[]>,
-  emptyMsg = '查無資料',
-): UseApiReturn<T> {
-  const [state, setState] = useState<UseApiState<T>>({
-    data: [],
-    loading: false,
-    error: null,
-  })
+  queryFn: () => Promise<T>,
+  initialData: T,
+): { data: T; loading: boolean; error: string | null } {
+  const [data, setData]       = useState<T>(initialData)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState<string | null>(null)
 
-  // 對應 fetchAndSet 的完整流程：try → set data / catch → set error
-  const execute = useCallback(async () => {
-    setState((s: UseApiState<T>) => ({ ...s, loading: true, error: null }))
-    try {
-      const result = await queryFn()
-      if (!result.length) {
-        setState({ data: [], loading: false, error: emptyMsg })
-      } else {
-        setState({ data: result, loading: false, error: null })
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : emptyMsg
-      setState({ data: [], loading: false, error: msg })
-    }
-  }, [queryFn, emptyMsg])
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    queryFn()
+      .then(result  => { if (!cancelled) setData(result) })
+      .catch(err    => { if (!cancelled) setError(err?.message ?? '請求失敗') })
+      .finally(()   => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [queryFn])
 
-  return { ...state, execute }
+  return { data, loading, error }
 }

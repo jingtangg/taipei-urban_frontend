@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {Terminal, Cpu, Database, Activity, ChevronLeft, ChevronRight, Map as MapIcon, Layers, Maximize} from 'lucide-react'
 import MapView, { type MapViewHandle } from '../components/Map'
 import { getDistrictList, getDistrictMetadata, getNarrowAlleyStatistics, getDistrictRankings, getHydrantStatistics } from '../services/urbanApi'
 import type { District, DistrictBasic, NarrowAlleyStatistics, DistrictRanking, HydrantStatistics } from '../types/geo'
+import { useApi } from '../hooks/useApi'
 
 const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
   const [current, setCurrent] = useState('')
@@ -28,46 +29,34 @@ export default function MapPage() {
   const [isRightOpen, setIsRightOpen] = useState(window.innerWidth >= 1024)
   const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標的 游標位置
   const mapRef = useRef<MapViewHandle>(null)
-  const [districtList, setDistrictList] = useState<DistrictBasic[]>([])  // 下拉選單用（輕量）
-  const [districts, setDistricts] = useState<District[]>([])             // 地圖 hook 用（含 label_center、narrowDensity）
-  const [stats, setStats] = useState<NarrowAlleyStatistics | null>(null)
-  const [rankings, setRankings] = useState<DistrictRanking[]>([])
-  const [hydrantStats, setHydrantStats] = useState<HydrantStatistics | null>(null)
-
   // 下拉選單：只需名稱，用輕量 endpoint（1 條 SQL）
-  useEffect(() => {
-    getDistrictList().then(setDistrictList).catch(console.error)
-  }, [])
+  const { data: districtList } = useApi(getDistrictList, [] as DistrictBasic[])
 
   // 地圖圖層：需要中心點座標與窄巷密度，用完整 endpoint（空間運算）
-  useEffect(() => {
-    getDistrictMetadata().then(setDistricts).catch(console.error)
-  }, [])
+  const { data: districts } = useApi(getDistrictMetadata, [] as District[])
+
+  const district = selectedDistrict === 'all' ? undefined : selectedDistrict
 
   // 載入窄巷統計（根據選擇的行政區）
-  useEffect(() => {
-    const district = selectedDistrict === 'all' ? undefined : selectedDistrict
-    getNarrowAlleyStatistics(district)
-      .then(setStats)
-      .catch(console.error)
-  }, [selectedDistrict])
+  const narrowAlleyFn = useCallback(
+    () => getNarrowAlleyStatistics(district),
+    [district],
+  )
+  const { data: stats } = useApi(narrowAlleyFn, null as NarrowAlleyStatistics | null)
 
   // 載入消防栓統計（根據選擇的行政區）
-  useEffect(() => {
-    const district = selectedDistrict === 'all' ? undefined : selectedDistrict
-    getHydrantStatistics(district)
-      .then(setHydrantStats)
-      .catch(console.error)
-  }, [selectedDistrict])
+  const hydrantFn = useCallback(
+    () => getHydrantStatistics(district),
+    [district],
+  )
+  const { data: hydrantStats } = useApi(hydrantFn, null as HydrantStatistics | null)
 
-  // 載入行政區排名（僅全區時顯示）
-  useEffect(() => {
-    if (selectedDistrict === 'all') {
-      getDistrictRankings()
-        .then(setRankings)
-        .catch(console.error)
-    }
-  }, [selectedDistrict])
+  // 載入行政區排名（僅全區時顯示，其餘區域回傳空陣列）
+  const rankingsFn = useCallback(
+    () => selectedDistrict === 'all' ? getDistrictRankings() : Promise.resolve([] as DistrictRanking[]),
+    [selectedDistrict],
+  )
+  const { data: rankings } = useApi(rankingsFn, [] as DistrictRanking[])
 
   const toggleLayer = (layer: keyof typeof layers) =>
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
