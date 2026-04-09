@@ -63,9 +63,10 @@ export const getFireStations = (district?: string) =>
     'GET',
   )
 
+
 /**
- * 取得行政區基本資料（不含幾何）
- * 用於下拉選單、統計列表等輕量查詢
+ * 取得行政區名稱列表（輕量，不含空間資料）
+ * 僅用於下拉選單，對應後端 index()，單一 SQL 無空間運算
  */
 export const getDistrictList = () =>
   apiQuery<DistrictBasic[]>(
@@ -76,8 +77,8 @@ export const getDistrictList = () =>
   )
 
 /**
- * 取得行政區元資料（中心點座標、窄巷密度）
- * 用於地圖文字標籤渲染與行政區縮放動畫
+ * 取得行政區元資料（含中心點座標與窄巷密度）
+ * 用於地圖縮放動畫與標籤顏色渲染，對應後端 metadata()，含空間運算
  */
 export const getDistrictMetadata = () =>
   apiQuery<District[]>(

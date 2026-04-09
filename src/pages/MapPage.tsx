@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {Terminal, Cpu, Database, Activity, ChevronLeft, ChevronRight, Map as MapIcon, Layers, Maximize} from 'lucide-react'
 import MapView, { type MapViewHandle } from '../components/Map'
-import { getDistrictMetadata, getNarrowAlleyStatistics, getDistrictRankings, getHydrantStatistics } from '../services/urbanApi'
-import type { District, NarrowAlleyStatistics, DistrictRanking, HydrantStatistics } from '../types/geo'
+import { getDistrictList, getDistrictMetadata, getNarrowAlleyStatistics, getDistrictRankings, getHydrantStatistics } from '../services/urbanApi'
+import type { District, DistrictBasic, NarrowAlleyStatistics, DistrictRanking, HydrantStatistics } from '../types/geo'
 
 const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
   const [current, setCurrent] = useState('')
@@ -28,12 +28,18 @@ export default function MapPage() {
   const [isRightOpen, setIsRightOpen] = useState(window.innerWidth >= 1024)
   const [coords, setCoords] = useState({ x: 306561.42, y: 2874758.18 }) //TWD97 座標的 游標位置
   const mapRef = useRef<MapViewHandle>(null)
-  const [districts, setDistricts] = useState<District[]>([])
+  const [districtList, setDistrictList] = useState<DistrictBasic[]>([])  // 下拉選單用（輕量）
+  const [districts, setDistricts] = useState<District[]>([])             // 地圖 hook 用（含 label_center、narrowDensity）
   const [stats, setStats] = useState<NarrowAlleyStatistics | null>(null)
   const [rankings, setRankings] = useState<DistrictRanking[]>([])
   const [hydrantStats, setHydrantStats] = useState<HydrantStatistics | null>(null)
 
-  // 載入行政區資料
+  // 下拉選單：只需名稱，用輕量 endpoint（1 條 SQL）
+  useEffect(() => {
+    getDistrictList().then(setDistrictList).catch(console.error)
+  }, [])
+
+  // 地圖圖層：需要中心點座標與窄巷密度，用完整 endpoint（空間運算）
   useEffect(() => {
     getDistrictMetadata().then(setDistricts).catch(console.error)
   }, [])
@@ -102,7 +108,7 @@ export default function MapPage() {
                     <option value="all" className="bg-black text-[#00ff41]">
                       {'> 台北市全區'}
                     </option>
-                    {districts.map(d => (
+                    {districtList.map(d => (
                       <option key={d.id} value={d.name} className="bg-black text-[#00ff41]">
                         {`> ${d.name}`}
                       </option>
