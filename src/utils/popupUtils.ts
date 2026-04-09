@@ -21,8 +21,8 @@ import {
 // ========== 警示徽章 HTML 字串 ==========
 const BADGE_BASE = `display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;border-radius:9999px;font-size:9px;font-weight:bold;vertical-align:middle`
 
-export const HIGH_WARN_BADGE = `<span style="${BADGE_BASE};border:1px solid ${COLOR_DANGER};color:${COLOR_DANGER};box-shadow:0 0 5px ${COLOR_DANGER}66">!!</span>`
-export const MID_WARN_BADGE  = `<span style="${BADGE_BASE};border:1px solid ${COLOR_WARNING};color:${COLOR_WARNING};box-shadow:0 0 5px ${COLOR_WARNING}66">!</span>`
+const HIGH_WARN_BADGE = `<span style="${BADGE_BASE};border:1px solid ${COLOR_DANGER};color:${COLOR_DANGER};box-shadow:0 0 5px ${COLOR_DANGER}66">!!</span>`
+const MID_WARN_BADGE  = `<span style="${BADGE_BASE};border:1px solid ${COLOR_WARNING};color:${COLOR_WARNING};box-shadow:0 0 5px ${COLOR_WARNING}66">!</span>`
 
 // ========== Popup 模板 ==========
 
