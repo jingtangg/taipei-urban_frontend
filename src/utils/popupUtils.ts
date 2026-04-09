@@ -41,7 +41,7 @@ export function createPopupHTML(
 ): string {
   return `
     <div class="terminal-popup">
-      <div class="terminal-popup-header text-[${headerColor}]">
+      <div class="terminal-popup-header" style="color:${headerColor}">
         [ ${title}${closeBracket ? ' ]' : ''}
       </div>
       <div class="terminal-popup-body">
