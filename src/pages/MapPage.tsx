@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {Terminal, Cpu, Database, Activity, ChevronLeft, ChevronRight, Map as MapIcon, Layers, Maximize} from 'lucide-react'
 import MapView, { type MapViewHandle } from '../components/Map'
+import { ApiStateView } from '../components/ApiStateView'
 import { getDistrictList, getDistrictMetadata, getNarrowAlleyStatistics, getDistrictRankings, getHydrantStatistics } from '../services/urbanApi'
 import type { District, DistrictBasic, NarrowAlleyStatistics, DistrictRanking, HydrantStatistics } from '../types/geo'
 import { useApi } from '../hooks/useApi'
@@ -49,21 +50,21 @@ export default function MapPage() {
     () => getNarrowAlleyStatistics(district),
     [district],
   )
-  const { data: stats } = useApi(narrowAlleyFn, null as NarrowAlleyStatistics | null)
+  const { data: stats, loading: statsLoading, error: statsError } = useApi(narrowAlleyFn, null as NarrowAlleyStatistics | null)
 
   // 載入消防栓統計（根據選擇的行政區）
   const hydrantFn = useCallback(
     () => getHydrantStatistics(district),
     [district],
   )
-  const { data: hydrantStats } = useApi(hydrantFn, null as HydrantStatistics | null)
+  const { data: hydrantStats, loading: hydrantLoading, error: hydrantError } = useApi(hydrantFn, null as HydrantStatistics | null)
 
   // 載入行政區排名（僅全區時顯示，其餘區域回傳空陣列）
   const rankingsFn = useCallback(
     () => selectedDistrict === 'all' ? getDistrictRankings() : Promise.resolve([] as DistrictRanking[]),
     [selectedDistrict],
   )
-  const { data: rankings } = useApi(rankingsFn, [] as DistrictRanking[])
+  const { data: rankings, loading: rankingsLoading, error: rankingsError } = useApi(rankingsFn, [] as DistrictRanking[])
 
   const toggleLayer = (layer: keyof typeof layers) =>
     setLayers(prev => ({ ...prev, [layer]: !prev[layer] }))
@@ -119,95 +120,86 @@ export default function MapPage() {
                 <section className="space-y-4">
                   <div>
                     <h3 className="text-[#00ff41] font-bold text-xs mb-2 border-l-2 border-[#00ff41] pl-2 uppercase tracking-wider">窄巷數據</h3>
-                    {stats ? (
-                      <div className="space-y-2 text-[10px] font-mono">
-                        {/* Row 1: 總窄巷數 - full width */}
-                        <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                          <p className="opacity-60 mb-1">總窄巷數</p>
-                          <p className="text-[#00ff41] text-sm font-bold">{stats.total} <span className="text-[10px] font-normal">條</span></p>
-                        </div>
-                        {/* Row 2: 都市計畫 (left) + 消防局重疊 (right) */}
-                        <div className="grid grid-cols-2 gap-2">
+                    <ApiStateView data={stats} error={statsError} loading={statsLoading}>
+                      {(s) => (
+                        <div className="space-y-2 text-[10px] font-mono">
                           <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                            <p className="opacity-60 mb-1">都市計畫窄巷</p>
-                            <p className="text-[#00ff41] text-sm font-bold">{stats.planned} <span className="text-[10px] font-normal">條</span></p>
+                            <p className="opacity-60 mb-1">總窄巷數</p>
+                            <p className="text-[#00ff41] text-sm font-bold">{s.total} <span className="text-[10px] font-normal">條</span></p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                              <p className="opacity-60 mb-1">都市計畫窄巷</p>
+                              <p className="text-[#00ff41] text-sm font-bold">{s.planned} <span className="text-[10px] font-normal">條</span></p>
+                            </div>
+                            <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                              <p className="opacity-60 mb-1">消防局重疊</p>
+                              <p className="text-[#00ff41] text-sm font-bold">{s.overlap} <span className="text-[10px] font-normal">條</span></p>
+                            </div>
                           </div>
                           <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                            <p className="opacity-60 mb-1">消防局重疊</p>
-                            <p className="text-[#00ff41] text-sm font-bold">{stats.overlap} <span className="text-[10px] font-normal">條</span></p>
+                            <p className="opacity-60 mb-1">消防局實際新增</p>
+                            <p className="text-[#00ff41] text-sm font-bold">{s.new_discovered} <span className="text-[10px] font-normal">條</span></p>
                           </div>
                         </div>
-                        {/* Row 3: 消防局實際新增 - full width */}
-                        <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                          <p className="opacity-60 mb-1">消防局實際新增</p>
-                          <p className="text-[#00ff41] text-sm font-bold">{stats.new_discovered} <span className="text-[10px] font-normal">條</span></p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] opacity-60">
-                        載入中...
-                      </div>
-                    )}
+                      )}
+                    </ApiStateView>
                   </div>
                   <div>
                     <h3 className="text-[#00ff41] font-bold text-xs mb-2 border-l-2 border-[#00ff41] pl-2 uppercase tracking-wider">消防栓數據</h3>
-                    {hydrantStats ? (
-                      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                        <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                          <p className="opacity-60 mb-1">總消防栓數</p>
-                          <p className="text-[#00ff41] text-sm font-bold">{hydrantStats.total_count} <span className="text-[10px] font-normal">個</span></p>
-                        </div>
-                        <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                          <p className="opacity-60 mb-1">設置密度</p>
-                          <p className="text-[#00ff41] text-sm font-bold">{hydrantStats.density} <span className="text-[10px] font-normal">/km²</span></p>
-                        </div>
-                        <div className="col-span-2 p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
-                          <div className="flex justify-between items-end mb-1">
-                            <p className="opacity-60">服務半徑</p>
-                            <p className="text-[8px] opacity-40 italic">r = √(A / n / π)</p>
+                    <ApiStateView data={hydrantStats} error={hydrantError} loading={hydrantLoading}>
+                      {(h) => (
+                        <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                          <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                            <p className="opacity-60 mb-1">總消防栓數</p>
+                            <p className="text-[#00ff41] text-sm font-bold">{h.total_count} <span className="text-[10px] font-normal">個</span></p>
                           </div>
-                          <p className="text-[#00ff41] text-sm font-bold">{hydrantStats.service_radius} <span className="text-[10px] font-normal">m</span></p>
+                          <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                            <p className="opacity-60 mb-1">設置密度</p>
+                            <p className="text-[#00ff41] text-sm font-bold">{h.density} <span className="text-[10px] font-normal">/km²</span></p>
+                          </div>
+                          <div className="col-span-2 p-2 border border-[#00ff41]/20 bg-[#00ff41]/5">
+                            <div className="flex justify-between items-end mb-1">
+                              <p className="opacity-60">服務半徑</p>
+                              <p className="text-[8px] opacity-40 italic">r = √(A / n / π)</p>
+                            </div>
+                            <p className="text-[#00ff41] text-sm font-bold">{h.service_radius} <span className="text-[10px] font-normal">m</span></p>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] opacity-60">
-                        載入中...
-                      </div>
-                    )}
+                      )}
+                    </ApiStateView>
                   </div>
 
                   {/* 行政區密度排名 - 僅全區時顯示 */}
                   {selectedDistrict === 'all' && (
                     <div>
                       <h3 className="text-[#00ff41] font-bold text-xs mb-2 border-l-2 border-[#00ff41] pl-2 uppercase tracking-wider">行政區密度排名</h3>
-                      {rankings.length > 0 ? (
-                        <div className="border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] font-mono">
-                          <table className="w-full">
-                            <thead>
-                              <tr className="border-b border-[#00ff41]/20">
-                                <th className="p-2 text-left opacity-60 font-normal">排名</th>
-                                <th className="p-2 text-left opacity-60 font-normal">區域</th>
-                                <th className="p-2 text-right opacity-60 font-normal">總計(條)</th>
-                                <th className="p-2 text-right opacity-60 font-normal">密度(/km²)</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {rankings.map((item) => (
-                                <tr key={item.district} className="border-b border-[#00ff41]/10 last:border-0">
-                                  <td className="p-2 text-[#00ff41]">{item.rank}</td>
-                                  <td className="p-2 text-[#00ff41]">{item.district}</td>
-                                  <td className="p-2 text-right text-[#00ff41]">{item.total_count}</td>
-                                  <td className="p-2 text-right text-[#00ff41]">{item.density.toFixed(2)}</td>
+                      <ApiStateView data={rankings} error={rankingsError} loading={rankingsLoading}>
+                        {(rows) => (
+                          <div className="border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] font-mono">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b border-[#00ff41]/20">
+                                  <th className="p-2 text-left opacity-60 font-normal">排名</th>
+                                  <th className="p-2 text-left opacity-60 font-normal">區域</th>
+                                  <th className="p-2 text-right opacity-60 font-normal">總計(條)</th>
+                                  <th className="p-2 text-right opacity-60 font-normal">密度(/km²)</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <div className="p-2 border border-[#00ff41]/20 bg-[#00ff41]/5 text-[10px] opacity-60">
-                          載入中...
-                        </div>
-                      )}
+                              </thead>
+                              <tbody>
+                                {rows.map((item) => (
+                                  <tr key={item.district} className="border-b border-[#00ff41]/10 last:border-0">
+                                    <td className="p-2 text-[#00ff41]">{item.rank}</td>
+                                    <td className="p-2 text-[#00ff41]">{item.district}</td>
+                                    <td className="p-2 text-right text-[#00ff41]">{item.total_count}</td>
+                                    <td className="p-2 text-right text-[#00ff41]">{item.density.toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </ApiStateView>
                     </div>
                   )}
                 </section>
