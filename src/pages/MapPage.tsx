@@ -5,6 +5,12 @@ import MapView, { type MapViewHandle } from '../components/Map'
 import { getDistrictList, getDistrictMetadata, getNarrowAlleyStatistics, getDistrictRankings, getHydrantStatistics } from '../services/urbanApi'
 import type { District, DistrictBasic, NarrowAlleyStatistics, DistrictRanking, HydrantStatistics } from '../types/geo'
 import { useApi } from '../hooks/useApi'
+import { COLOR_DANGER, COLOR_WARNING } from '../constants/colors'
+
+const BADGE_BASE_STYLE = {
+  display: 'inline-block', width: 14, height: 14, lineHeight: '13px',
+  textAlign: 'center' as const, borderRadius: '9999px', fontSize: 9, fontWeight: 'bold',
+}
 
 const Typewriter = ({ text, delay = 50 }: { text: string; delay?: number }) => {
   const [current, setCurrent] = useState('')
@@ -382,11 +388,11 @@ export default function MapPage() {
                     <p className="mb-2 opacity-60">資料品質警示</p>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span style={{ display:'inline-block', width:14, height:14, lineHeight:'13px', textAlign:'center', border:'1px solid #ff4444', borderRadius:'9999px', color:'#ff4444', fontSize:9, fontWeight:'bold', boxShadow:'0 0 5px #ff444466' }}>!!</span>
+                        <span style={{ ...BADGE_BASE_STYLE, border:`1px solid ${COLOR_DANGER}`, color:COLOR_DANGER, boxShadow:`0 0 5px ${COLOR_DANGER}66` }}>!!</span>
                         <span className="opacity-80 text-[#00ff41]">路寬偏移 &gt;30m 或 定位偏移 &gt;50m</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span style={{ display:'inline-block', width:14, height:14, lineHeight:'13px', textAlign:'center', border:'1px solid #f5a623', borderRadius:'9999px', color:'#f5a623', fontSize:9, fontWeight:'bold', boxShadow:'0 0 5px #f5a62366' }}>!</span>
+                        <span style={{ ...BADGE_BASE_STYLE, border:`1px solid ${COLOR_WARNING}`, color:COLOR_WARNING, boxShadow:`0 0 5px ${COLOR_WARNING}66` }}>!</span>
                         <span className="opacity-80 text-[#00ff41]">路寬偏移 &gt;8m 或 定位偏移 &gt;30m</span>
                       </div>
                     </div>

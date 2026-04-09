@@ -166,12 +166,62 @@ body {
   background: #000 !important;
 }
 
+/* Popup 外框 */
 .ol-popup {
-  background: #000 !important;
-  color: var(--terminal-green) !important;
-  border: 1px solid var(--terminal-green) !important;
-  border-radius: 0 !important;
-  box-shadow: 0 0 15px var(--terminal-green-dim) !important;
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.95);
+  border: 1px solid var(--terminal-green);
+  padding: 0;
+  border-radius: 0;
+  bottom: 12px;
+  left: -50px;
+  min-width: 240px;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+}
+
+/* Popup 指向箭頭 */
+.ol-popup:after, .ol-popup:before {
+  top: 100%;
+  border: solid transparent;
+  content: " ";
+  height: 0;
+  width: 0;
+  position: absolute;
+  pointer-events: none;
+}
+.ol-popup:after {
+  border-top-color: rgba(0, 0, 0, 0.95);
+  border-width: 10px;
+  left: 48px;
+  margin-left: -10px;
+}
+.ol-popup:before {
+  border-top-color: var(--terminal-green);
+  border-width: 11px;
+  left: 48px;
+  margin-left: -11px;
+}
+
+/* Popup 內容（透過 innerHTML 注入，非 React JSX） */
+.terminal-popup {
+  color: var(--terminal-green);
+  font-family: 'JetBrains Mono', monospace;
+}
+.terminal-popup-header {
+  background: rgba(0, 255, 65, 0.1);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+  font-weight: bold;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.terminal-popup-body {
+  padding: 12px;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.terminal-popup-body p {
+  margin: 4px 0;
 }
 
 /* 底圖灰階效果：只套用於底圖 Tile 圖層，保留道路圖層的顏色 */

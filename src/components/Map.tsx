@@ -17,13 +17,15 @@ import { Point, LineString, Polygon } from 'ol/geom'
 
 // Hooks
 import { useMapInit } from '../hooks/useMapInit'
-import { useDistrictLayer, DETAIL_ZOOM_THRESHOLD, DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from '../hooks/useDistrictLayer'
+import { useDistrictLayer, DISTRICT_OVERVIEW_CENTER, DISTRICT_OVERVIEW_ZOOM } from '../hooks/useDistrictLayer'
 import type { District } from '../types/geo'
 import { useRoadLayer } from '../hooks/useRoadLayer'
 import { useNarrowAlleyLayer } from '../hooks/useNarrowAlleyLayer'
 import { useFireLayers } from '../hooks/useFireLayers'
 import { useZoomLevel } from '../hooks/useZoomLevel'
 import { getRiskInfo } from '../utils/riskUtils'
+import { createPopupHTML, buildWarningHTML } from '../utils/popupUtils'
+import { COLOR_PRIMARY, COLOR_DANGER, COLOR_HIGH_RISK } from '../constants/colors'
 
 export interface MapViewHandle {
   zoomToTaipei: () => void
@@ -88,18 +90,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
     useEffect(() => {
       if (!mapRef.current) return
 
-      // Popup HTML 模板生成器
-      const createPopupHTML = (headerColor: string, title: string, bodyContent: string, closeBracket: boolean = true) => `
-        <div class="terminal-popup">
-          <div class="terminal-popup-header text-[${headerColor}]">
-            [ ${title}${closeBracket ? ' ]' : ''}
-          </div>
-          <div class="terminal-popup-body">
-            ${bodyContent}
-          </div>
-        </div>
-      `
-
       const handleClick = (evt: any) => {
         const map = mapRef.current!
 
@@ -137,9 +127,8 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           else if (props.type === 'road') {
             const width = props.width_m
             const { level: riskLevel, desc: riskDesc } = getRiskInfo(width)
-
             popupContent = createPopupHTML(
-              '#00ff41',
+              COLOR_PRIMARY,
               `計畫路寬: ${width.toFixed(1)}M`,
               `
                 <p>> 風險等級: ${riskLevel}</p>
@@ -151,35 +140,17 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
 
           // 消防局實測窄巷 Popup
           else if (props.type === 'narrow_alley') {
-            const width = props.width_m
-            const roadWidth = props.road_width
+            const width       = props.width_m
+            const roadWidth   = props.road_width
             const snapDistance = props.snap_distance_m
-            const alleyName = props.alley_name || '未知巷道'
+            const alleyName   = props.alley_name || '未知巷道'
 
-            // 計算風險等級
             const { level: riskLevel, desc: riskDesc } = getRiskInfo(width)
-
-            const warnings = []
-            const highWarn = '<span style="display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;border:1px solid #ff4444;border-radius:9999px;color:#ff4444;font-size:9px;font-weight:bold;box-shadow:0 0 5px #ff444466;vertical-align:middle">!!</span>'
-            const midWarn  = '<span style="display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;border:1px solid #f5a623;border-radius:9999px;color:#f5a623;font-size:9px;font-weight:bold;box-shadow:0 0 5px #f5a62366;vertical-align:middle">!</span>'
-
-            if (roadWidth) {
-              const widthDiff = roadWidth - width
-              const absWidthDiff = Math.abs(widthDiff)
-              if (absWidthDiff > 30) { warnings.push(`路寬偏移 ${highWarn}`) }
-              else if (absWidthDiff > 8) { warnings.push(`路寬偏移 ${midWarn}`) }
-            }
-
-            if (snapDistance) {
-              if (snapDistance > 50) { warnings.push(`距離偏移 ${highWarn}`) }
-              else if (snapDistance > 30) { warnings.push(`距離偏移 ${midWarn}`) }
-            }
-
-            const warningText = warnings.length > 0 ? warnings.join(' ') : '無'
+            const warningText  = buildWarningHTML(roadWidth, width, snapDistance)
             const widthDiffText = roadWidth ? (roadWidth - width).toFixed(1) + 'm' : '未有計畫值，待確認'
 
             popupContent = createPopupHTML(
-              width < 3.5 ? '#ff4444' : '#ffaa00',
+              width < 3.5 ? COLOR_DANGER : COLOR_HIGH_RISK,
               `實際路寬: ${width.toFixed(1)}M ] ${alleyName}`,
               `
                 <p>> 風險等級: ${riskLevel}</p>
@@ -198,7 +169,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           else if (props.type === 'hydrant') {
             const typeText = props.hydrant_type === 'aboveground' ? '地上式消防栓' : '地下式消防栓'
             popupContent = createPopupHTML(
-              '#00ff41',
+              COLOR_PRIMARY,
               typeText,
               `
                 <p>> 所屬轄區: ${props.district}</p>
@@ -210,7 +181,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           // 消防局 Popup
           else if (props.type === 'station') {
             popupContent = createPopupHTML(
-              '#ff4444',
+              COLOR_DANGER,
               props.name,
               `
                 <p>> 地址: ${props.address}</p>
@@ -305,61 +276,6 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           </button>
         </div>
 
-        {/* Popup 樣式 */}
-        <style>{`
-        .ol-popup {
-          position: absolute;
-          background-color: rgba(0, 0, 0, 0.95);
-          border: 1px solid #00ff41;
-          padding: 0;
-          border-radius: 0;
-          bottom: 12px;
-          left: -50px;
-          min-width: 240px;
-          box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
-        }
-        .ol-popup:after, .ol-popup:before {
-          top: 100%;
-          border: solid transparent;
-          content: " ";
-          height: 0;
-          width: 0;
-          position: absolute;
-          pointer-events: none;
-        }
-        .ol-popup:after {
-          border-top-color: rgba(0, 0, 0, 0.95);
-          border-width: 10px;
-          left: 48px;
-          margin-left: -10px;
-        }
-        .ol-popup:before {
-          border-top-color: #00ff41;
-          border-width: 11px;
-          left: 48px;
-          margin-left: -11px;
-        }
-        .terminal-popup {
-          color: #00ff41;
-          font-family: 'JetBrains Mono', monospace;
-        }
-        .terminal-popup-header {
-          background: rgba(0, 255, 65, 0.1);
-          padding: 8px 12px;
-          border-bottom: 1px solid rgba(0, 255, 65, 0.3);
-          font-weight: bold;
-          font-size: 12px;
-          letter-spacing: 1px;
-        }
-        .terminal-popup-body {
-          padding: 12px;
-          font-size: 10px;
-          line-height: 1.6;
-        }
-        .terminal-popup-body p {
-          margin: 4px 0;
-        }
-      `}</style>
       </div>
     )
   }
