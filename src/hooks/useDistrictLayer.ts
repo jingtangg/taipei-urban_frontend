@@ -78,16 +78,22 @@ export function useDistrictLayer(
       properties: { id: "districts_wms" },
     });
 
-    const markerFeatures = districts.map((d) => {
-      const match = d.label_center.match(/POINT\(([^ ]+) ([^ ]+)\)/);
-      const center = fromLonLat([parseFloat(match![1]), parseFloat(match![2])]);
-      return new Feature({
-        geometry: new Point(center),
-        name: d.name,
-        narrowDensity: d.narrowDensity || 0,
-        type: "district_marker",
-      });
-    });
+    const markerFeatures = districts
+      .map((d) => {
+        const match = d.label_center.match(/POINT\(([^ ]+) ([^ ]+)\)/);
+        if (!match) {
+          console.warn(`[useDistrictLayer] 無法解析 WKT: "${d.label_center}"，略過 ${d.name}`);
+          return null;
+        }
+        const center = fromLonLat([parseFloat(match[1]), parseFloat(match[2])]);
+        return new Feature({
+          geometry: new Point(center),
+          name: d.name,
+          narrowDensity: d.narrowDensity || 0,
+          type: "district_marker",
+        });
+      })
+      .filter((f): f is Feature => f !== null);
 
     const markerLayer = new VectorLayer({
       source: new VectorSource({ features: markerFeatures }),
