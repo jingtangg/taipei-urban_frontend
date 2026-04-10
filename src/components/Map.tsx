@@ -14,8 +14,9 @@
 import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
 import Overlay from 'ol/Overlay'
 import { Point, LineString, Polygon } from 'ol/geom'
-import type MapBrowserEvent from 'ol/MapBrowserEvent'
 import type { FeatureLike } from 'ol/Feature'
+import type MapBrowserEvent from 'ol/MapBrowserEvent'
+import { unByKey } from 'ol/Observable'
 
 // Hooks
 import { useMapInit } from '../hooks/useMapInit'
@@ -26,9 +27,7 @@ import { useRoadLayer } from '../hooks/useRoadLayer'
 import { useNarrowAlleyLayer } from '../hooks/useNarrowAlleyLayer'
 import { useFireLayers } from '../hooks/useFireLayers'
 import { useZoomLevel } from '../hooks/useZoomLevel'
-import { getRiskInfo } from '../utils/riskUtils'
-import { createPopupHTML, buildWarningHTML } from '../utils/popupUtils'
-import { COLOR_PRIMARY } from '../constants/colors'
+import { resolveFeaturePopup } from '../utils/popupUtils'
 
 export interface MapViewHandle {
   zoomToTaipei: () => void
@@ -93,7 +92,7 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
     useEffect(() => {
       if (!mapRef.current) return
 
-      const handleClick = (evt: MapBrowserEvent<PointerEvent>) => {
+      const key = mapRef.current.on('click', (evt: MapBrowserEvent) => {
         const map = mapRef.current!
 
         // 收集點擊位置的所有 features（增加線段偵測範圍）
@@ -116,82 +115,13 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           const props = feature.getProperties() as PopupFeatureProps
           const geom = feature.getGeometry()
 
-          let popupContent = ''
-
-          // A.行政區中心點標記
+          // 行政區標記：觸發 drill-down，不顯示 popup
           if (props.type === 'district_marker') {
-            // 直接觸發 drill down，不顯示 popup
-            if (onDistrictClick) {
-              onDistrictClick(props.name)
-            }
+            onDistrictClick?.(props.name)
+            return
           }
 
-          // B.都市計畫窄巷 Popup
-          else if (props.type === 'road') {
-            const width = props.width_m
-            const { level: riskLevel, desc: riskDesc } = getRiskInfo(width)
-            popupContent = createPopupHTML(
-              COLOR_PRIMARY,
-              `計畫路寬: ${width.toFixed(1)}M`,
-              `
-                <p>> 風險等級: ${riskLevel}</p>
-                <p>> 風險描述: ${riskDesc}</p>
-                <p>> 資料來源: 都市計畫道路</p>
-              `
-            )
-          }
-
-          // 消防局實測窄巷 Popup
-          else if (props.type === 'narrow_alley') {
-            const width       = props.width_m
-            const roadWidth   = props.road_width
-            const snapDistance = props.snap_distance_m
-            const alleyName   = props.alley_name || '未知巷道'
-
-            const { level: riskLevel, desc: riskDesc } = getRiskInfo(width)
-            const warningText  = buildWarningHTML(roadWidth, width, snapDistance)
-            const widthDiffText = roadWidth ? (roadWidth - width).toFixed(1) + 'm' : '未有計畫值，待確認'
-
-            popupContent = createPopupHTML(
-              COLOR_PRIMARY,
-              `實際路寬: ${width.toFixed(1)}M ] ${alleyName}`,
-              `
-                <p>> 風險等級: ${riskLevel}</p>
-                <p>> 風險描述: ${riskDesc}</p>
-                <p>> 計畫路寬: ${roadWidth ? roadWidth.toFixed(1) + 'M' : '未知'}</p>
-                <p>> 路寬差異: ${widthDiffText}</p>
-                <p>> 消防局分類: ${props.category}</p>
-                ${warningText !== '無' ? `<p>> 警示提醒: ${warningText}</p>` : ''}
-                <p>> 資料來源: 消防局 113 年窄巷清冊</p>
-              `,
-              false
-            )
-          }
-
-          // 消防栓 Popup
-          else if (props.type === 'hydrant') {
-            const typeText = props.hydrant_type === 'aboveground' ? '地上式消防栓' : '地下式消防栓'
-            popupContent = createPopupHTML(
-              COLOR_PRIMARY,
-              typeText,
-              `
-                <p>> 所屬轄區: ${props.district}</p>
-                <p>> 設備狀態: 正常運作</p>
-              `
-            )
-          }
-
-          // 消防局 Popup
-          else if (props.type === 'station') {
-            popupContent = createPopupHTML(
-              COLOR_PRIMARY,
-              props.name,
-              `
-                <p>> 地址: ${props.address}</p>
-                <p>> 聯繫狀態: 在線</p>
-              `
-            )
-          }
+          const popupContent = resolveFeaturePopup(props)
 
           // 顯示 Popup
           if (popupContent && popupRef.current && overlayRef.current) {
@@ -218,13 +148,9 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(
           // 點擊空白處關閉 Popup
           overlayRef.current?.setPosition(undefined)
         }
-      }
+      })
 
-      mapRef.current.on('click', handleClick)
-
-      return () => {
-        mapRef.current?.un('click', handleClick)
-      }
+      return () => { unByKey(key) }
     }, [mapRef.current, currentZoom])
 
     // ========== 暴露方法給父元件 ==========
