@@ -2,7 +2,7 @@
 
 台北市道路寬度、窄巷分布、消防設施的互動式 GIS 地圖，協助評估都市防災韌性。以行政區為單位篩選資料，疊合「計畫道路」與「消防局實測窄巷」兩個資料來源，標示消防車通道風險路段，並顯示消防栓覆蓋密度統計。
 
-> **後端 API**：[taipei-urban](../taipei-urban)（Laravel 12 + PostgreSQL/PostGIS + GeoServer）
+> **後端 API**：[taipei-urban](https://github.com/jingtangg/taipei-urban)（Laravel 12 + PostgreSQL/PostGIS + GeoServer）
 
 ---
 
