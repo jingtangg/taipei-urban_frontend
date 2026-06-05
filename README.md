@@ -1,70 +1,71 @@
-# 台北市都市防災地圖｜前端
+# Taipei City Urban Disaster Prevention Map | Frontend
 
-台北市道路寬度、窄巷分布、消防設施的互動式 GIS 地圖，協助評估都市防災韌性。以行政區為單位篩選資料，疊合「計畫道路」與「消防局實測窄巷」兩個資料來源，標示消防車通道風險路段，並顯示消防栓覆蓋密度統計。
+An interactive GIS map of road widths, narrow alley distribution, and fire safety infrastructure across Taipei City — designed to assess urban disaster resilience. Data is filterable by administrative district, overlaying two sources — "urban-planned roads" and "fire department field-surveyed narrow alleys" — to identify fire truck access risk segments and display fire hydrant coverage density statistics.
 
-> **後端 API**：[taipei-urban](https://github.com/jingtangg/taipei-urban)（Laravel 12 + PostgreSQL/PostGIS + GeoServer）
-
----
-
-## 功能特色
-
-**地圖互動**
-- 多圖層疊合：計畫道路（依路寬分色）、消防局實測窄巷、消防栓（地上/地下分色）、消防局、行政區密度熱圖（GeoServer WMS）
-- Click Popup：點擊任一地物顯示詳細屬性（路名、路寬、偏移距離、風險等級、資料品質警示）
-- 底圖切換：OSM 街道圖 ↔ ArcGIS 衛星影像
-- Zoom 分層顯示：`< 15` 只顯示行政區名稱與 WMS 密度底圖；`≥ 15` 展開道路、窄巷、消防設施等詳細圖層
-- 座標列：即時顯示滑鼠位置的 TWD97 TM2 座標
-
-**側欄與統計**
-- 左側：行政區下拉選單、窄巷統計（計畫 / 實測新發現 / 重疊）、消防栓密度與服務半徑
-- 全台北市模式下額外顯示 12 行政區密度排名
-- 右側：圖層開關、底圖選擇、色票說明
-
-**視覺主題**
-- Terminal / Matrix 風格：`#00ff41`（翠綠）on `#0a0a0a`（黑），風險以紅／黃色階標示
+> **Backend API**: [taipei-urban](https://github.com/jingtangg/taipei-urban) (Laravel 12 + PostgreSQL/PostGIS + GeoServer)
 
 ---
 
-## 技術棧
+## Features
 
-| 類別 | 技術 |
-|------|------|
-| 框架 | React 19 + TypeScript |
-| 建置工具 | Vite |
-| 地圖引擎 | **OpenLayers**（OL Overlay、LayerGroup、VectorLayer） |
-| 座標系統 | proj4（TWD97 TM2 EPSG:3826 ↔ WGS84 EPSG:4326） |
-| HTTP 客戶端 | axios（含 AbortController 請求取消） |
+**Map Interaction**
+- Multi-layer overlay: urban-planned roads (color-coded by width), fire department field-surveyed narrow alleys, fire hydrants (above-ground/underground color-coded), fire stations, and district density heatmap (GeoServer WMS)
+- Click Popup: click any feature to view detailed attributes (road name, width, offset distance, risk level, data quality warnings)
+- Basemap toggle: OSM street map ↔ ArcGIS satellite imagery
+- Zoom-level layering: `< 15` shows district labels and WMS density heatmap only; `≥ 15` expands to roads, narrow alleys, and fire infrastructure layers
+- Coordinate bar: real-time display of cursor position in TWD97 TM2 (EPSG:3826) coordinates
+
+**Sidebar & Statistics**
+- Left panel: district dropdown, narrow alley statistics (planned / field-surveyed new discoveries / overlapping), fire hydrant density and service radius
+- City-wide mode additionally shows density rankings across all 12 administrative districts
+- Right panel: layer toggles, basemap selection, color legend
+
+**Visual Theme**
+- Terminal / Matrix aesthetic: `#00ff41` (matrix green) on `#0a0a0a` (black), with risk levels indicated in red/yellow gradients
+
+---
+
+## Tech Stack
+
+| Category | Technology |
+|----------|-----------|
+| Framework | React 19 + TypeScript |
+| Build Tool | Vite |
+| Map Engine | **OpenLayers** (OL Overlay, LayerGroup, VectorLayer) |
+| Coordinate System | proj4 (TWD97 TM2 EPSG:3826 ↔ WGS84 EPSG:4326) |
+| HTTP Client | axios (with AbortController request cancellation) |
 | UI | Tailwind CSS |
-| 動畫 | Motion（Framer Motion） |
-| 圖示 | lucide-react |
-| 狀態管理 | 原生 React Hooks（無外部狀態庫） |
+| Animation | Motion (Framer Motion) |
+| Icons | lucide-react |
+| State Management | Native React Hooks (no external state library) |
 
 ---
 
-## 程式架構
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ Page 層                                                          │
+│ Page Layer                                                       │
 │ src/pages/MapPage.tsx                                            │
-│   統籌左右側欄（統計、圖層控制）、下拉選單、座標列               │
+│   Orchestrates sidebars (statistics, layer controls),           │
+│   district dropdown, and coordinate bar                         │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ UI / 互動層                                                      │
+│ UI / Interaction Layer                                           │
 │                                                                  │
 │  Map.tsx                          ApiStateView.tsx               │
-│    整合所有地圖 Hooks               統一處理 useApi 三態          │
-│    click popup / OL Overlay        error / loading / data        │
-│                                    供 MapPage 統計區塊使用        │
+│    Integrates all map hooks         Handles useApi three states  │
+│    click popup / OL Overlay         error / loading / data       │
+│                                     Used by MapPage stats        │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ React Hook 層                                                    │
+│ React Hook Layer                                                 │
 │                                                                  │
-│  資料擷取                       地圖圖層管理                      │
+│  Data Fetching                  Map Layer Management             │
 │  useApi.ts ──────────────────→ useDistrictLayer.ts (WMS+Label)  │
-│    泛型 fetch + cancellation    useRoadLayer.ts                  │
+│    Generic fetch + cancellation useRoadLayer.ts                  │
 │    { data, loading, error }     useNarrowAlleyLayer.ts           │
 │                                 useFireLayers.ts                 │
 │                                 useMapInit.ts                    │
@@ -72,34 +73,34 @@
 └─────────────────────────────────────────────────────────────────┘
           ↓                                ↓
 ┌─────────────────────┐    ┌──────────────────────────────────────┐
-│ 工具與轉換層         │    │ 視覺樣式層                           │
+│ Utils & Transforms  │    │ Visual Styles                        │
 │ utils/              │    │ styles/                              │
-│   geoTransform.ts   │    │   fireStyles.ts  (消防栓/消防局)     │
-│   riskUtils.ts      │    │   layerStyles.ts (道路/窄巷)         │
+│   geoTransform.ts   │    │   fireStyles.ts  (hydrant/station)   │
+│   riskUtils.ts      │    │   layerStyles.ts (road/alley)        │
 │   popupUtils.ts     │    └──────────────────────────────────────┘
 └─────────────────────┘
           ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ 設定常數層（單一來源，無 magic number）                           │
+│ Configuration & Constants  (single source of truth, no magic #) │
 │ constants/                                                       │
-│   mapConfig.ts             GeoServer URL、視角中心、Zoom 門檻    │
-│   riskThresholds.ts        路寬風險分級 (3.5m / 6m)             │
-│   dataQualityThresholds.ts 偏移警示門檻 (30/8/50/30m)           │
-│   colors.ts                跨檔案共用色票                        │
+│   mapConfig.ts             GeoServer URL, map center, zoom thresholds│
+│   riskThresholds.ts        Road width risk levels (3.5m / 6m)   │
+│   dataQualityThresholds.ts Offset warning thresholds (30/8/50/30m)│
+│   colors.ts                Shared color palette across files     │
 └─────────────────────────────────────────────────────────────────┘
           ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ 型別定義層                                                       │
+│ Type Definition Layer                                            │
 │ types/geo.ts                                                     │
-│   GeoJSONPoint · GeoJSONLineString          幾何型別             │
-│   RoadFeatureProps · NarrowAlleyFeatureProps 圖層屬性            │
+│   GeoJSONPoint · GeoJSONLineString          Geometry types       │
+│   RoadFeatureProps · NarrowAlleyFeatureProps Layer feature props │
 │   FireHydrantFeatureProps · FireStationFeatureProps              │
-│   PopupFeatureProps  (discriminated union)  OL 邊界型別包層      │
-│   District · DistrictBasic · 統計型別                           │
+│   PopupFeatureProps  (discriminated union)  OL boundary wrapper  │
+│   District · DistrictBasic · Statistics types                   │
 └─────────────────────────────────────────────────────────────────┘
           ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ 領域 API 層                                                      │
+│ Domain API Layer                                                 │
 │ services/urbanApi.ts                                             │
 │   getDistrictList()  getDistrictMetadata()  getRoads()          │
 │   getNarrowAlleys()  getFireHydrants()  getFireStations()       │
@@ -107,113 +108,114 @@
 └─────────────────────────────────────────────────────────────────┘
           ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ HTTP 層                                                          │
+│ HTTP Layer                                                       │
 │ services/api.ts                                                  │
 │   apiQuery()  resolveApiUrl()  axios client                     │
 └─────────────────────────────────────────────────────────────────┘
           ↓                                ↓
 ┌─────────────────┐             ┌──────────────────────────────┐
 │  Laravel API    │             │  GeoServer WMS               │
-│  JSON 資料       │             │  行政區邊界 + SLD 分色渲染    │
-│  (roads/alleys/ │             │  districts_density SQL View  │
-│   hydrants/...) │             │  → 靜態 Tile 輸出            │
+│  JSON responses │             │  District boundaries +        │
+│  (roads/alleys/ │             │  SLD color rendering         │
+│   hydrants/...) │             │  districts_density SQL View  │
+│                 │             │  → Static tile output        │
 └─────────────────┘             └──────────────────────────────┘
 ```
 
 ---
 
-## 設計說明
+## Design Notes
 
-**Zoom 分層策略**
+**Zoom-Level Layering Strategy**
 
-| Zoom 層級 | 顯示內容 |
-|-----------|---------|
-| `< 15` | 行政區名稱標籤 + GeoServer WMS 密度熱圖 |
-| `≥ 15` | 計畫道路、窄巷、消防栓、消防局 |
+| Zoom Level | Displayed Content |
+|-----------|-----------------|
+| `< 15` | District name labels + GeoServer WMS density heatmap |
+| `≥ 15` | Urban-planned roads, narrow alleys, fire hydrants, fire stations |
 
-切換行政區時地圖自動飛行定位，放大至 zoom 15 觸發詳細圖層載入。
+The map automatically flies to the selected district on change; zooming to level 15 triggers detailed layer loading.
 
-**雙資料源比對**
+**Dual Data Source Comparison**
 
-計畫道路（都市計畫資料）以虛線呈現，消防局實測窄巷以實線呈現，疊合後可直接目視兩份資料的吻合程度與偏移量。`useRoadLayer` 僅在選定單一行政區時才向 API 請求，避免全市資料量過大。
+Urban-planned roads (from city planning records) are rendered as dashed lines; fire department field-surveyed narrow alleys are rendered as solid lines. Overlaying both sources provides a direct visual comparison of alignment and geometric offset between the two datasets. `useRoadLayer` only requests data from the API when a single district is selected, preventing excessive data loads in city-wide view.
 
-**風險色階**
+**Risk Color Scale**
 
-| 路寬 | 等級 | 顏色 |
-|------|------|------|
-| `< 3.5m` | 極高風險（消防車無法通行） | 紅 |
-| `3.5–6m` | 高風險（通行受限） | 黃 |
-| `≥ 6m` | 一般 | — |
+| Road Width | Level | Color |
+|-----------|-------|-------|
+| `< 3.5m` | Critical risk (fire truck cannot pass) | Red |
+| `3.5–6m` | High risk (access restricted) | Yellow |
+| `≥ 6m` | Normal | — |
 
-**消防栓樣式區分**
+**Fire Hydrant Style Distinction**
 
-地上栓（實心青色菱形）與地下栓（空心淺藍菱形）以不同 OL 樣式分開標示，反映實地可及性差異。
+Above-ground hydrants (solid cyan diamond) and underground hydrants (hollow light-blue diamond) are rendered with distinct OpenLayers styles, reflecting real-world accessibility differences.
 
 ---
 
-## 快速開始
+## Quick Start
 
-### 環境需求
+### Prerequisites
 
 - Node.js 18+
-- 後端 API 已啟動（預設 `http://localhost:8000`）
-- GeoServer 已啟動（預設 `http://localhost:8090`）
+- Backend API running (default `http://localhost:8000`)
+- GeoServer running (default `http://localhost:8090`)
 
-### 安裝與執行
+### Installation
 
 ```bash
-# 1. 安裝依賴
+# 1. Install dependencies
 npm install
 
-# 2. 設定環境變數
+# 2. Configure environment variables
 cp .env.example .env
-# 填入實際 API 與 GeoServer 位址
+# Fill in your actual API and GeoServer addresses
 
-# 3. 啟動開發伺服器
+# 3. Start development server
 npm run dev
 ```
 
-### 環境變數
+### Environment Variables
 
-| 變數 | 說明 | 預設值 |
-|------|------|--------|
-| `VITE_API_URL` | Laravel API 基底 URL | `http://localhost:8000/taipei/api` |
-| `VITE_GEOSERVER_URL` | GeoServer WMS Endpoint | `http://localhost:8090/geoserver/taipei_urban/wms` |
+| Variable | Description | Default |
+|----------|------------|---------|
+| `VITE_API_URL` | Laravel API base URL | `http://localhost:8000/taipei/api` |
+| `VITE_GEOSERVER_URL` | GeoServer WMS endpoint | `http://localhost:8090/geoserver/taipei_urban/wms` |
 
 ---
 
-## 專案結構
+## Project Structure
 
 ```
 src/
 ├── pages/
-│   └── MapPage.tsx              # 頁面根元件，管理全域狀態
+│   └── MapPage.tsx              # Root page component, manages global state
 ├── components/
-│   ├── Map.tsx                  # OL 地圖容器，整合所有圖層 Hooks
-│   └── ApiStateView.tsx         # 泛型三態（loading / error / data）包裝
+│   ├── Map.tsx                  # OL map container, integrates all layer hooks
+│   └── ApiStateView.tsx         # Generic three-state (loading / error / data) wrapper
 ├── hooks/
-│   ├── useApi.ts                # 泛型 fetch + AbortController
-│   ├── useMapInit.ts            # OL Map 初始化，OSM / ArcGIS 底圖
-│   ├── useDistrictLayer.ts      # WMS 圖層 + 行政區名稱標籤
-│   ├── useRoadLayer.ts          # 計畫道路（虛線，路寬 < 6m）
-│   ├── useNarrowAlleyLayer.ts   # 實測窄巷（實線）
-│   ├── useFireLayers.ts         # 消防栓 + 消防局
-│   └── useZoomLevel.ts          # 監聽 OL zoom 變化
+│   ├── useApi.ts                # Generic fetch + AbortController
+│   ├── useMapInit.ts            # OL Map initialization, OSM / ArcGIS basemaps
+│   ├── useDistrictLayer.ts      # WMS layer + district name labels
+│   ├── useRoadLayer.ts          # Urban-planned roads (dashed, width < 6m)
+│   ├── useNarrowAlleyLayer.ts   # Field-surveyed narrow alleys (solid line)
+│   ├── useFireLayers.ts         # Fire hydrants + fire stations
+│   └── useZoomLevel.ts          # Listens to OL zoom changes
 ├── services/
-│   ├── api.ts                   # axios 客戶端，dev/prod 錯誤處理
-│   └── urbanApi.ts              # 領域 API（9 個端點）
+│   ├── api.ts                   # axios client, dev/prod error handling
+│   └── urbanApi.ts              # Domain API (9 endpoints)
 ├── types/
-│   └── geo.ts                   # GeoJSON 型別 + Popup discriminated union
+│   └── geo.ts                   # GeoJSON types + Popup discriminated union
 ├── constants/
-│   ├── mapConfig.ts             # URL、中心點、zoom 門檻
+│   ├── mapConfig.ts             # URL, map center, zoom thresholds
 │   ├── riskThresholds.ts        # 3.5m / 6m
-│   ├── dataQualityThresholds.ts # 偏移警示門檻
+│   ├── dataQualityThresholds.ts # Offset warning thresholds
 │   └── colors.ts                # #00ff41 / #ff4444 / #ffaa00
 ├── utils/
 │   ├── geoTransform.ts          # API GeoJSON → OL Feature
-│   ├── riskUtils.ts             # 路寬 → 風險等級文字
-│   └── popupUtils.ts            # Popup HTML 組裝（terminal 樣式）
+│   ├── riskUtils.ts             # Road width → risk level label
+│   └── popupUtils.ts            # Popup HTML assembly (terminal style)
 └── styles/
-    ├── fireStyles.ts            # 消防栓（地上/地下）、消防局樣式
-    └── layerStyles.ts           # 道路（虛線）、窄巷（實線）樣式
+    ├── fireStyles.ts            # Fire hydrant (above/underground), station styles
+    └── layerStyles.ts           # Road (dashed), narrow alley (solid) styles
 ```
