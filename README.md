@@ -1,226 +1,226 @@
-# 防救災空間資料治理元件
+# Disaster Prevention Spatial Data Governance Component
 
-## 數位發展部「防災積木元件創新賽」參賽作品
+## Submission for the Ministry of Digital Affairs (MODA) "Disaster Prevention Building Block Component Innovation Competition"
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red.svg)](https://laravel.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue.svg)](https://www.postgresql.org/)
 [![PostGIS](https://img.shields.io/badge/PostGIS-3.x-green.svg)](https://postgis.net/)
 
-本元件為開源後端 API 服務型元件（Service Component），遵循積木式設計原則。
+An open-source backend API service component following building-block design principles.
 
-定位為**決策前的防救災空間風險驗證工具（Analytical Planning System）**，協助都發局、消防局、工務局規劃人員在辦公室場景下，將靜態政府圖資轉化為可被驗證的空間假說。
+Positioned as a **pre-decision disaster prevention spatial risk validation tool (Analytical Planning System)**, it helps urban planners at the Urban Development Bureau, Fire Department, and Department of Public Works transform static government geospatial data into verifiable spatial hypotheses — from their desks, before planning meetings.
 
-以台北市真實圖資完成效能驗證；採去耦合架構，替換底層 PostGIS 資料源即可部署至任何縣市。
-
----
-
-## 目錄
-
-- [一、問題描述](#一問題描述problem-statement)
-- [二、核心解法](#二核心解法solution)
-- [三、元件設計](#三元件設計component-design)
-- [四、使用情境](#四使用情境use-cases)
-- [五、預期效益](#五預期效益expected-impact)
-- [六、延伸可能](#六延伸可能extensibility)
-- [快速開始](#快速開始quick-start)
+Performance-validated with real Taipei City geospatial data. Decoupled architecture: swap the underlying PostGIS data source to deploy in any city or county.
 
 ---
 
-## 一、問題描述（Problem Statement）
+## Table of Contents
 
-台灣防救災空間資料存在一個系統性的**資料治理盲點**：
-
-> 都市計畫道路寬度（計畫值）與消防局實測窄巷（實測值），是兩套由不同局處維護、從未被系統性空間比對的孤立資料集。
-
-這代表政府規劃人員無法回答最基本的問題：計畫圖上合格的道路，消防局量出來進不進得去？哪些區域存在結構性風險？哪些是消防局現場識別、但計畫圖資從未登錄的隱藏盲點？
-
-**現況：過去十年，城市缺乏任何工具能系統性回答這些問題。**
-
-現有唯一的視覺化紀錄是 2014 年一份民間製作的 Google My Maps，資料自 2016 年起停止更新。消防局清冊以 PDF/CSV 散落，都市計畫圖資是靜態文件——兩套資料從未被整合成可驗證的空間工具。
-
-### 台北市試點數據
-
-整合兩套圖資後，全市 **1,672 條**路段中，有 **202 條**從未被任何系統登記為高風險——這些是消防局在現場識別的風險，但計畫圖資完全空白。合計 **9.18 公里**隱藏盲點，分布於 12 個行政區。
-
-| 資料類別 | 數量 | 長度 | 決策價值 |
-|---------|------|------|---------|
-| 都市計畫窄巷（僅計畫） | 1,398 條 | 6.21 km | 待實地驗證之法定風險區 |
-| 消防局實測新增（僅實測） | **202 條** | 2.97 km | **揭露計畫圖資從未登錄的隱藏盲點** |
-| 雙重確認（重疊） | 72 條 | 0.31 km | 需優先編列改善預算之熱點 |
-| **總計** | **1,672 條** | **9.18 km** | 全台北市窄巷完整空間畫像 |
-
-### 花蓮縣：問題更為根本
-
-花蓮縣消防局已列管 **427 筆**實測狹小巷道清冊，但花蓮縣都市計畫道路寬度資料至今從未以開放格式公開。在計畫值完全缺失的情況下，任何事前的雙源比對都無從進行。
-
-> 這不是窄巷問題，是**資料治理危機**。
+- [1. Problem Statement](#1-problem-statement)
+- [2. Solution](#2-solution)
+- [3. Component Design](#3-component-design)
+- [4. Use Cases](#4-use-cases)
+- [5. Expected Impact](#5-expected-impact)
+- [6. Extensibility](#6-extensibility)
+- [Quick Start](#quick-start)
 
 ---
 
-## 二、核心解法（Solution）
+## 1. Problem Statement
 
-本元件讓規劃圖資從靜態文件，變成可被驗證的空間假說：
+Taiwan's disaster prevention geospatial data has a systemic **data governance blind spot**:
 
-1. **跨局處圖資空間融合**：將都市計畫道路（線型 GIS）、消防局實測清冊（地址文字）、消防栓與消防分隊（點位）匯入 PostGIS，透過空間索引（GIST）進行高速幾何交集運算。
+> Urban-planned road widths (planned values) and fire department field-surveyed narrow alleys (measured values) are two isolated datasets — maintained by separate government agencies, never systematically cross-referenced in space.
 
-2. **自動識別隱藏盲點**：透過 `matched_road_id` 空間比對去重，識別「消防局已列管、但計畫圖資從未登錄」的路段，提供規劃人員可追溯的數據依據。
+This means planners cannot answer the most fundamental questions: Can fire trucks actually access roads that pass on the planning map? Which areas have structural risk? Which segments have been identified by fire departments in the field but are completely absent from the planning records?
 
-3. **漸進式數位賦能**：即使在計畫道路圖資缺失的縣市（如花蓮），本元件仍可先將消防局文字清冊空間化，在地圖上呈現風險分布，再倡議地方政府補齊資料開放缺口。
+**The reality: for the past decade, cities have had no tool to systematically answer these questions.**
 
-4. **積木式標準輸出**：統一輸出 GeoJSON RFC 7946 標準格式，供地圖渲染、統計分析、AI Agent 多步驟調用直接串接。
+The only existing visualization was a community-made Google My Maps from 2014, last updated in 2016. Fire department registries are scattered across PDF and CSV files; urban planning data remains static documents — the two datasets have never been integrated into a verifiable spatial tool.
+
+### Taipei City Pilot Data
+
+After integrating both datasets, **202 out of 1,672 total road segments** citywide had never been registered as high-risk by any system — risks identified by fire departments on the ground, but completely absent from planning records. A combined **9.18 km of hidden blind spots** distributed across 12 administrative districts.
+
+| Data Category | Count | Length | Decision Value |
+|--------------|-------|--------|---------------|
+| Urban-planned narrow alleys (plan only) | 1,398 | 6.21 km | Legally designated risk zones awaiting field verification |
+| Fire dept. field-surveyed additions (survey only) | **202** | 2.97 km | **Reveals hidden blind spots never recorded in planning data** |
+| Dual-confirmed (overlapping) | 72 | 0.31 km | Priority hotspots for immediate budget allocation |
+| **Total** | **1,672** | **9.18 km** | Complete spatial picture of narrow alleys across Taipei City |
+
+### Hualien County: A More Fundamental Problem
+
+Hualien County Fire Department has registered **427** field-surveyed narrow alleys, yet Hualien County's urban-planned road width data has never been published in any open format. Without planned values, any dual-source spatial comparison is simply impossible.
+
+> This is not a narrow alley problem. It is a **data governance crisis**.
 
 ---
 
-## 三、元件設計（Component Design）
+## 2. Solution
 
-### Input（條件設定）
+This component transforms static planning data into verifiable spatial hypotheses:
 
-- `district`：行政區名稱，省略則回傳全市
-- `category`：窄巷風險類別篩選（`紅區` / `黃區`），省略則回傳全部
+1. **Cross-agency geospatial fusion**: Imports urban-planned roads (line GIS), fire department field registries (address text), fire hydrants, and fire stations (point data) into PostGIS, enabling high-speed geometric intersection queries via spatial indexing (GiST).
 
-### Process（處理邏輯）
+2. **Automatic hidden blind spot detection**: Uses `matched_road_id` spatial deduplication to identify segments that "fire departments have registered but planning data has never recorded", providing planners with a traceable data basis.
 
-- **資料預處理管線**（僅在匯入時執行一次，運行期不依賴外部服務）：
+3. **Incremental digital enablement**: Even in counties where planned road data is missing (e.g., Hualien), this component can first spatialize fire department text registries — visualizing risk distribution on a map — then advocate for local government to fill the open data gap.
+
+4. **Building-block standardized output**: Outputs GeoJSON RFC 7946 format uniformly, ready for direct integration with map rendering, statistical analysis, or multi-step AI Agent calls.
+
+---
+
+## 3. Component Design
+
+### Input
+
+- `district`: Administrative district name; omit to return all districts citywide
+- `category`: Narrow alley risk category filter (`紅區` / `黃區` — red zone / yellow zone); omit to return all
+
+### Process
+
+- **Data preprocessing pipeline** (runs once at import; no runtime dependency on external services):
 
   ```
-  消防局清冊（地址文字）
-      → Google Geocoding（取得概略座標）
-      → ST_Transform（WGS84 → TWD97 / EPSG:3826）
-      → ST_DWithin + ST_Distance（鄰近搜尋）
-      → ST_ClosestPoint（Snapping 至最近計畫道路線段）
-      → matched_road_id（建立空間對應關係）
+  Fire dept. registry (address text)
+      → Google Geocoding (obtain approximate coordinates)
+      → ST_Transform (WGS84 → TWD97 / EPSG:3826)
+      → ST_DWithin + ST_Distance (proximity search)
+      → ST_ClosestPoint (snap to nearest planned road segment)
+      → matched_road_id (establish spatial correspondence)
   ```
 
-- **可信度警示機制**（顯式化不確定性，而非掩蓋誤差）：
+- **Confidence warning system** (makes uncertainty explicit rather than hiding error):
 
-  | 警示類型 | 正常 | 中度 ⚠️ | 高度 ❗ |
-  |---------|------|--------|--------|
-  | 距離偏移（Snapping 距離）| ≤ 30m | 30–50m | > 50m |
-  | 路寬偏移（計畫值與實測值差距）| ≤ 8m | 8–30m | > 30m |
+  | Warning Type | Normal | Moderate ⚠️ | High ❗ |
+  |-------------|--------|------------|--------|
+  | Offset distance (snapping distance) | ≤ 30m | 30–50m | > 50m |
+  | Road width offset (planned vs. field-measured gap) | ≤ 8m | 8–30m | > 30m |
 
-- **運行期空間分析：**
+- **Runtime spatial analysis:**
 
   ```
   roads_planned + narrow_alleys_temp
-      → ST_Intersects（空間交集比對）
-      → SQL CTE 去重（識別三類：僅計畫 / 僅實測 / 雙重確認）
-      → 風險分類
-      → Laravel Cache TTL 3600s（Dashboard 快取優化）
+      → ST_Intersects (spatial intersection comparison)
+      → SQL CTE deduplication (identifies 3 categories: plan-only / survey-only / dual-confirmed)
+      → Risk classification
+      → Laravel Cache TTL 3600s (dashboard cache optimization)
   ```
 
-- **風險分級依據**（全國通用法規）：
+- **Risk classification basis** (nationally applicable regulations):
 
-  | 等級 | 寬度 | 法規依據 |
-  |------|------|---------|
-  | 🔴 極高風險 | < 3.5m | 內政部「劃設消防車輛救災活動空間指導原則」（五層以下消防車通行最低淨寬） |
-  | 🟡 高風險 | 3.5–6m | 建築技術規則第 110 條（6m 以上免設防火間隔為次級邊界） |
-  | 🟢 一般 | > 6m | 符合防火間隔免設標準 |
+  | Level | Width | Legal Basis |
+  |-------|-------|-------------|
+  | 🔴 Critical risk | < 3.5m | Ministry of Interior "Guidelines for Delimiting Emergency Vehicle Access Space" (minimum clear width for fire trucks in buildings 5 floors or below) |
+  | 🟡 High risk | 3.5–6m | Building Technical Regulations Article 110 (≥6m road frontage exempt from fire separation requirements — used as secondary threshold) |
+  | 🟢 Normal | > 6m | Meets fire separation exemption standard |
 
-消防局清冊的紅區、黃區分類如實呈現，不做二次詮釋——方法論透明度本身就是這個驗證系統的公信力來源。
+The red-zone / yellow-zone classifications from fire department registries are presented as-is without reinterpretation — methodological transparency is itself the source of credibility for this validation system.
 
-### Output（分析結果）
+### Output
 
-- 符合 GeoJSON RFC 7946 標準的 `FeatureCollection`
-- 含風險等級、空間座標、路寬差異、偏移警示
-- 可供任何標準地圖套件渲染，或供 AI Agent 多步驟調用
+- `FeatureCollection` conforming to GeoJSON RFC 7946
+- Includes risk level, spatial coordinates, road width delta, and offset warnings
+- Renderable by any standard map library, or directly callable in multi-step AI Agent workflows
 
-### API 端點
+### API Endpoints
 
-> 以下端點以台北市試點部署為例，實際部署可依縣市調整路徑前綴。
+> Endpoints below use the Taipei City pilot deployment as the example. Path prefixes can be adjusted per city/county in actual deployments.
 
 ```
-# 窄巷資料
+# Narrow alley data
 GET /taipei/api/narrow-alleys?district={district}&category={category}
-# category 傳「紅區」或「黃區」，省略則回傳全部
+# category: pass 紅區 (red zone) or 黃區 (yellow zone); omit to return all
 
-# Dashboard 統計（快取 TTL 3600s）
+# Dashboard statistics (cached TTL 3600s)
 GET /taipei/api/dashboard/narrow-alley-statistics?district={district}
 GET /taipei/api/dashboard/district-rankings
 GET /taipei/api/dashboard/hydrant-statistics?district={district}
 
-# 空間圖層
+# Spatial layers
 GET /taipei/api/roads/planned?district={district}&category={category}
-# category 可傳 narrow（<3.5m）/ mid（3.5–6m）/ wide（>6m）
+# category: narrow (<3.5m) / mid (3.5–6m) / wide (>6m)
 
 GET /taipei/api/districts
 GET /taipei/api/districts/metadata
 GET /taipei/api/fire-hydrants?district={district}
 GET /taipei/api/fire-stations?district={district}
 
-限流：throttle:60,1（每分鐘最高 60 次）
+Rate limit: throttle:60,1 (max 60 requests per minute)
 ```
 
 ---
 
-## 四、使用情境（Use Cases）
+## 4. Use Cases
 
-> 本元件非第一線救災操作工具，使用者為都發局、消防局、工務局規劃人員。
-> 使用時機是規劃會議前的資料準備、跨局處協調與預算編列，不是災害發生當下。
+> This component is not a frontline emergency response tool. Users are urban planners at the Urban Development Bureau, Fire Department, and Department of Public Works.
+> It is designed for pre-meeting data preparation, cross-agency coordination, and budget planning — not for use during an active disaster event.
 
-### 情境一：都市計畫道路檢討（都發局）
+### Scenario 1: Urban Road Planning Review (Urban Development Bureau)
 
-調用 `/taipei/api/narrow-alleys` 分析計畫值與實測值落差最大的路段，行政區密度排名一目瞭然——大同區 43.4 條/km²、中正區 40.6 條/km² 遠超統計四分位數 Q3（18.8 條/km²），可作為判斷防災型都市更新優先啟動區域的科學依據。
+Call `/taipei/api/narrow-alleys` to analyze segments with the largest gap between planned and field-measured values. District density rankings are immediately clear: Datong District at 43.4 segments/km² and Zhongzheng District at 40.6 segments/km² both far exceed the statistical Q3 threshold (18.8 segments/km²), providing a scientific basis for determining priority zones for disaster-resilient urban renewal.
 
-### 情境二：消防設備布建規劃（消防局）
+### Scenario 2: Fire Infrastructure Deployment Planning (Fire Department)
 
-結合 `/taipei/api/fire-hydrants` 與窄巷圖層，分析哪些消防栓因周邊窄巷阻隔而無法有效運用，精準規劃替代水源布建位置與消防分隊部署優先順序。
+Combine `/taipei/api/fire-hydrants` with the narrow alley layer to identify which hydrants are effectively blocked by surrounding narrow alleys — enabling precise planning of alternative water source locations and fire station deployment priorities.
 
-### 情境三：道路工程預算編列（工務局）
+### Scenario 3: Road Improvement Budget Allocation (Department of Public Works)
 
-調用 `/taipei/api/dashboard/district-rankings` 取得各區窄巷密度排行，結合 202 條隱藏盲點清單，作為狹小巷道拓寬工程的改善優先順序與預算分配依據。
+Call `/taipei/api/dashboard/district-rankings` to obtain per-district narrow alley density rankings. Combined with the list of 202 hidden blind spots, this provides a prioritized improvement order and budget allocation basis for narrow alley widening projects.
 
-### 情境四：回應花蓮馬太鞍溪堰塞湖情境
+### Scenario 4: Response to the Hualien Mataian Creek Landslide Dam Scenario
 
-花蓮縣消防局 427 筆清冊格式與台北市高度相容，可直接匯入進行同等分析。即使計畫值缺失，本元件仍可先完成清冊空間化，讓規劃人員看到風險分布地圖；並以元件揭露的資料缺口，倡議花蓮縣政府加速推動都市計畫道路寬度資料開放——補齊計畫值，才能完成雙源比對的數位閉環。
+The 427-entry Hualien County Fire Department registry is highly format-compatible with the Taipei City dataset and can be imported directly for equivalent analysis. Even without planned road values, this component can spatialize the registry first — giving planners a risk distribution map — and then use the data gap it reveals to advocate for Hualien County Government to accelerate open publication of urban-planned road width data. Completing the dual-source comparison requires filling that planned-value gap first.
 
-花蓮縣《狹小巷道管理作業程序》定義狹小巷道為 2–7.5m，本元件以全國通用的內政部指導原則（3.5m）重新標準化分級，將各縣市格式不一的清冊統一轉換為可比較的空間風險格式。
+Hualien County's *Narrow Alley Management Procedures* defines narrow alleys as 2–7.5m wide. This component re-standardizes the classification using the nationally applicable Ministry of Interior guideline (3.5m threshold), converting registries with inconsistent formats across counties into a unified, comparable spatial risk format.
 
-### 情境五：AI Agent 多步驟調用
+### Scenario 5: Multi-Step AI Agent Integration
 
-本元件支援標準 REST API，可供防災 AI 助理（如 Claude）自主調用，在多步驟分析中整合空間風險數據，自動生成結構化的分區防災風險評估報告。
-
----
-
-## 五、預期效益（Expected Impact）
-
-- **數據貢獻**：台北試點識別 202 條、9.18 公里從未登記的高風險路段，填補十年資料斷層；花蓮縣 427 筆清冊格式相容，可直接匯入進行同等分析。
-
-- **漸進式部署**：即使計畫值缺失（如花蓮），仍可完成消防清冊空間化，提供基礎風險視覺化與改善優先順序依據。
-
-- **政策倡議**：揭露花蓮縣計畫道路資料開放缺口，推動數位閉環所需的前置政策條件。
-
-- **技術可遷移**：去耦合架構，任何縣市替換 PostGIS 資料源即可部署，無需重新開發。
+This component exposes a standard REST API that can be called autonomously by disaster prevention AI assistants (such as Claude) to integrate spatial risk data in multi-step analysis workflows, automatically generating structured district-level disaster risk assessment reports.
 
 ---
 
-## 六、延伸可能（Extensibility）
+## 5. Expected Impact
 
-1. **跨縣市部署**：替換底層 PostGIS 空間資料源，複製至全台任何縣市；花蓮 427 筆清冊可直接匯入。
+- **Data contribution**: The Taipei pilot identified 202 segments spanning 9.18 km of previously unregistered high-risk roads, closing a ten-year data gap. Hualien County's 427-entry registry is format-compatible and can be directly imported for equivalent analysis.
 
-2. **推動計畫道路資料開放**：花蓮縣計畫道路尚未以 SHP/GeoJSON 公開，是完整落地的前置政策條件。
+- **Incremental deployment**: Even where planned road values are missing (e.g., Hualien), fire department registries can be spatialized to provide foundational risk visualization and improvement prioritization.
 
-3. **事件驅動防災**：未來可結合民生公共物聯網 IoT 感測器（雨量計、水位計），感測值超標時自動調降道路通行評等，實現動態風險更新。
+- **Policy advocacy**: Exposes Hualien County's open data gap in planned road data, establishing the prerequisite policy conditions needed to complete the digital feedback loop.
 
-4. **路網導航整合**：整合 pgRouting，提供規劃人員辦公室端的救災路徑模擬分析。
+- **Technical portability**: Decoupled architecture — any city or county can deploy by swapping the PostGIS data source, with no redevelopment required.
 
 ---
 
-## 快速開始（Quick Start）
+## 6. Extensibility
 
-### 環境需求
+1. **Multi-county deployment**: Swap the underlying PostGIS spatial data source to replicate across any county in Taiwan. Hualien's 427-entry registry is ready to import.
+
+2. **Advocating for planned road data openness**: Hualien County's planned road data has not been published as SHP/GeoJSON — fulfilling this is a prerequisite policy condition for full deployment.
+
+3. **Event-driven disaster prevention**: Future integration with Taiwan's Civic IoT sensors (rain gauges, water level meters) could automatically downgrade road traversability ratings when sensor thresholds are exceeded, enabling dynamic risk updates.
+
+4. **Road network navigation integration**: Integrate pgRouting to provide planners with office-side emergency route simulation analysis.
+
+---
+
+## Quick Start
+
+### Prerequisites
 
 - PHP 8.2+ / Composer 2
-- PostgreSQL 14+（含 PostGIS 3.4 擴充）
-- GeoServer 2.x（地圖服務，可選）
-- Docker（建議）
+- PostgreSQL 14+ (with PostGIS 3.4 extension)
+- GeoServer 2.x (map service, optional)
+- Docker (recommended)
 
-### 安裝
+### Installation
 
 ```bash
 git clone https://github.com/jingtangg/taipei-urban.git
 cd taipei-urban
 cp .env.example .env
-# 設定 DB_HOST / DB_DATABASE / DB_USERNAME / DB_PASSWORD
+# Set DB_HOST / DB_DATABASE / DB_USERNAME / DB_PASSWORD
 docker-compose up -d
 php artisan migrate
 php artisan serve
@@ -229,26 +229,26 @@ php artisan serve
 ### Client Sample Code
 
 ```javascript
-// 取得全市行政區窄巷密度排名
+// Get city-wide district narrow alley density rankings
 const response = await fetch('/taipei/api/dashboard/district-rankings');
 const { data } = await response.json();
-// data.rankings → [{ district: '大同區', count: 208, density: 43.4 }, ...]
+// data.rankings → [{ district: 'Datong District', count: 208, density: 43.4 }, ...]
 
-// 取得指定行政區極高風險窄巷 GeoJSON
+// Get critical-risk (red zone) narrow alley GeoJSON for a specific district
 const geoResponse = await fetch(
   '/taipei/api/narrow-alleys?district=大同區&category=紅區'
 );
 const geojson = await geoResponse.json();
-// → GeoJSON FeatureCollection，符合 RFC 7946 標準，可供任何標準地圖套件渲染
+// → GeoJSON FeatureCollection conforming to RFC 7946; renderable by any standard map library
 
-// 取得消防栓統計
+// Get fire hydrant statistics
 const hydrantResponse = await fetch(
   '/taipei/api/dashboard/hydrant-statistics?district=大同區'
 );
 const { data: hydrantData } = await hydrantResponse.json();
 ```
 
-### OpenAPI 規格
+### OpenAPI Specification
 
 ```yaml
 openapi: 3.0.0
@@ -259,13 +259,13 @@ paths:
         - name: district
           in: query
           schema: { type: string }
-          description: 行政區名稱，省略則回傳全市
+          description: Administrative district name; omit to return all districts
         - name: category
           in: query
           schema:
             type: string
             enum: [紅區, 黃區]
-          description: 風險類別，省略則回傳全部
+          description: Risk category (紅區 = red zone, 黃區 = yellow zone); omit to return all
       responses:
         '200':
           content:
@@ -300,17 +300,17 @@ paths:
                             density: { type: number }
 ```
 
-### 資料來源
+### Data Sources
 
-| 資料集 | 提供機關 | 格式 |
-|--------|---------|------|
-| 臺北市道路寬度 | 台北市都市發展局 | Shapefile |
-| 臺北市狹小巷道清冊 | 台北市消防局 | CSV / PDF |
-| 大臺北地區消防栓分布點位圖 | 台北自來水事業處 | CSV |
-| 臺北市政府消防局各單位通訊錄 | 台北市消防局 | CSV |
-| 台北市行政區界圖 | 台北市政府 | Shapefile |
-| 花蓮縣列管狹小巷道清冊 | 花蓮縣消防局 | XLS |
+| Dataset | Provider | Format |
+|---------|---------|--------|
+| Taipei City Road Width | Taipei City Urban Development Bureau | Shapefile |
+| Taipei City Narrow Alley Registry | Taipei City Fire Department | CSV / PDF |
+| Greater Taipei Fire Hydrant Distribution Map | Taipei Water Department | CSV |
+| Taipei City Fire Department Unit Directory | Taipei City Fire Department | CSV |
+| Taipei City Administrative District Boundaries | Taipei City Government | Shapefile |
+| Hualien County Registered Narrow Alley Registry | Hualien County Fire Department | XLS |
 
-### AI 使用說明
+### AI Usage Note
 
-開發過程使用生成式 AI（Claude）輔助程式碼撰寫與架構設計。元件運行時完全不依賴 AI，但輸出的標準 GeoJSON 格式設計上支援 AI Agent 直接調用。
+Generative AI (Claude) was used to assist with code writing and architecture design during development. The component does not depend on AI at runtime; however, its standardized GeoJSON output is designed to support direct calls by AI agents in multi-step workflows.
