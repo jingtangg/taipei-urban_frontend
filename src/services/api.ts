@@ -15,11 +15,13 @@ import axios from 'axios'
 
 /**
  * Laravel API 標準回傳格式
- * 後端統一使用此格式包裝所有資料回應
+ * - 空間圖層端點：data 為 GeoJSON FeatureCollection (RFC 7946)
+ * - 純列表端點（districts）：data 為 { tableList, total }
+ * - 統計端點（dashboard/*）：data 為一般 JSON 物件
  */
 interface ApiResponse<T> {
   success: boolean
-  data: { tableList: T[] }
+  data: T
   errMsg?: string
 }
 
@@ -49,8 +51,9 @@ export const client = axios.create({
  * - 正式環境: 只拋出 errorMsg，保護系統資訊安全
  *
  * 自動判斷邏輯:
- * - 如果 response.data.data.tableList 存在 → 回傳 tableList
- * - 否則 → 回傳整個 response.data.data
+ * - data.type === 'FeatureCollection' → 攤平 features 為 { ...properties, geometry }[]
+ * - data.tableList 存在 → 回傳 tableList 陣列（districts 端點）
+ * - 否則 → 直接回傳 data（dashboard 統計端點）
  */
 export async function apiQuery<T>(
   url: string,
@@ -66,8 +69,21 @@ export async function apiQuery<T>(
     const resData = response.data
 
     if (resData.success) {
-      // 自動適配：有 tableList 就回傳 tableList，否則回傳整個 data
-      return resData.data.tableList ?? resData.data
+      // 空間圖層端點：FeatureCollection → 攤平為 { ...properties, geometry }[]
+      if (resData.data?.type === 'FeatureCollection') {
+        return resData.data.features.map(
+          (f: { geometry: unknown; properties: Record<string, unknown> }) => ({
+            ...f.properties,
+            geometry: f.geometry,
+          }),
+        ) as T
+      }
+      // 純列表端點（districts）：取出 tableList 陣列
+      if (resData.data?.tableList !== undefined) {
+        return resData.data.tableList as T
+      }
+      // 統計端點（dashboard/*）：直接回傳 data
+      return resData.data
     }
 
     throw new Error(errorMsg)
