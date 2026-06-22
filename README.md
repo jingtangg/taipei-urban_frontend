@@ -252,20 +252,101 @@ const { data: hydrantData } = await hydrantResponse.json();
 
 ```yaml
 openapi: 3.0.0
+info:
+  title: 防救災空間資料治理元件 API
+  version: 1.0.0
+
+components:
+  schemas:
+    # ── GeoJSON 幾何型別（RFC 7946，座標順序：[longitude, latitude]）──
+    PointGeometry:
+      type: object
+      required: [type, coordinates]
+      properties:
+        type: { type: string, enum: [Point] }
+        coordinates:
+          type: array
+          description: "[longitude, latitude]，WGS84 (EPSG:4326)"
+          items: { type: number }
+          minItems: 2
+          maxItems: 2
+
+    LineStringGeometry:
+      type: object
+      required: [type, coordinates]
+      properties:
+        type: { type: string, enum: [LineString] }
+        coordinates:
+          type: array
+          items:
+            type: array
+            items: { type: number }
+            minItems: 2
+            maxItems: 2
+
+    # ── GeoJSON Feature 基底 ──
+    GeoJSONFeature:
+      type: object
+      required: [type, geometry, properties]
+      properties:
+        type: { type: string, enum: [Feature] }
+        geometry: { type: object }
+        properties: { type: object }
+
+    # ── 各端點的 properties schema ──
+    FireHydrantProperties:
+      type: object
+      required: [id, wpid, type, district]
+      properties:
+        id: { type: string }
+        wpid: { type: string, description: 自來水事業處消防栓編號 }
+        type: { type: string, description: "地上式消防栓 / 地下式消防栓" }
+        district: { type: string }
+
+    FireStationProperties:
+      type: object
+      required: [id, name, address]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        address: { type: string }
+
+    NarrowAlleyProperties:
+      type: object
+      required: [id, alley_name, district, category, width_m]
+      properties:
+        id: { type: string }
+        alley_name: { type: string }
+        district: { type: string }
+        category:
+          type: string
+          enum: [紅區, 黃區]
+          description: "消防局風險分類（如實呈現）"
+        width_m: { type: number, description: 消防局實測寬度（公尺） }
+        road_width: { type: number, nullable: true, description: 對應計畫道路寬度（公尺） }
+        snap_distance_m: { type: number, nullable: true, description: "Snapping 距離（公尺），> 50m 表示高度不確定性" }
+
+    RoadPlannedProperties:
+      type: object
+      required: [id, road_width, width_m, width_category]
+      properties:
+        id: { type: string }
+        road_width: { type: string, description: 原始計畫道路寬度標記 }
+        width_m: { type: number, description: 計畫道路寬度（公尺） }
+        width_category:
+          type: string
+          enum: [narrow, mid, wide]
+          description: "narrow < 3.5m / mid 3.5–6m / wide ≥ 6m"
+
 paths:
-  /taipei/api/narrow-alleys:
+  /taipei/api/fire-hydrants:
     get:
+      summary: 消防栓點位
       parameters:
         - name: district
           in: query
           schema: { type: string }
-          description: 行政區名稱，省略則回傳全市
-        - name: category
-          in: query
-          schema:
-            type: string
-            enum: [紅區, 黃區]
-          description: 風險類別，省略則回傳全部
+          description: 行政區名稱（省略則回傳全市）
       responses:
         '200':
           content:
@@ -276,9 +357,219 @@ paths:
                   success: { type: boolean }
                   data:
                     type: object
-                    description: GeoJSON FeatureCollection (RFC 7946)
+                    properties:
+                      type: { type: string, enum: [FeatureCollection] }
+                      features:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/GeoJSONFeature'
+                            - type: object
+                              properties:
+                                geometry:
+                                  $ref: '#/components/schemas/PointGeometry'
+                                properties:
+                                  $ref: '#/components/schemas/FireHydrantProperties'
+
+  /taipei/api/fire-stations:
+    get:
+      summary: 消防隊點位
+      parameters:
+        - name: district
+          in: query
+          schema: { type: string }
+          description: 行政區名稱（省略則回傳全市）
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      type: { type: string, enum: [FeatureCollection] }
+                      features:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/GeoJSONFeature'
+                            - type: object
+                              properties:
+                                geometry:
+                                  $ref: '#/components/schemas/PointGeometry'
+                                properties:
+                                  $ref: '#/components/schemas/FireStationProperties'
+
+  /taipei/api/narrow-alleys:
+    get:
+      summary: 消防局實測窄巷
+      description: |
+        每筆資料對應一條已透過 ST_ClosestPoint 空間比對至計畫道路的窄巷路段。
+        snap_distance_m 欄位提供可信度警示。
+      parameters:
+        - name: district
+          in: query
+          schema: { type: string }
+          description: 行政區名稱（省略則回傳全市）
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [紅區, 黃區]
+          description: 消防局風險分類（省略則回傳全部）
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      type: { type: string, enum: [FeatureCollection] }
+                      features:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/GeoJSONFeature'
+                            - type: object
+                              properties:
+                                geometry:
+                                  $ref: '#/components/schemas/LineStringGeometry'
+                                properties:
+                                  $ref: '#/components/schemas/NarrowAlleyProperties'
+
+  /taipei/api/roads/planned:
+    get:
+      summary: 都市計畫道路
+      parameters:
+        - name: district
+          in: query
+          schema: { type: string }
+          description: 行政區名稱（省略則回傳全市）
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [narrow, mid, wide]
+          description: 寬度分級（省略則回傳全部）
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      type: { type: string, enum: [FeatureCollection] }
+                      features:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/GeoJSONFeature'
+                            - type: object
+                              properties:
+                                geometry:
+                                  $ref: '#/components/schemas/LineStringGeometry'
+                                properties:
+                                  $ref: '#/components/schemas/RoadPlannedProperties'
+
+  /taipei/api/districts:
+    get:
+      summary: 行政區列表（不含空間資料）
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      tableList:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string }
+                            name: { type: string }
+                            area_km2: { type: number }
+                      total: { type: integer }
+
+  /taipei/api/districts/metadata:
+    get:
+      summary: 行政區元資料（中心點 + 窄巷密度）
+      description: 幾何邊界由 GeoServer WMS 負責，此端點僅提供元資料
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      tableList:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string }
+                            name: { type: string }
+                            area_km2: { type: number }
+                            label_center:
+                              type: string
+                              description: "WKT 格式中心點，例：POINT(121.517 25.033)"
+                            narrowDensity:
+                              type: number
+                              description: 窄巷密度（條/km²）
+                      total: { type: integer }
+
+  /taipei/api/dashboard/narrow-alley-statistics:
+    get:
+      summary: 窄巷統計
+      description: |
+        三類路段：
+        - planned：計畫道路 width_m < 6m
+        - overlap：計畫與實測雙重確認熱點
+        - new_discovered：消防局實測但計畫圖資從未登錄的隱藏盲點
+      parameters:
+        - name: district
+          in: query
+          schema: { type: string }
+          description: 行政區名稱（省略則回傳全市）
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    required: [total, planned, overlap, new_discovered]
+                    properties:
+                      total: { type: integer, example: 1672 }
+                      planned: { type: integer, example: 1470 }
+                      overlap: { type: integer, example: 72 }
+                      new_discovered: { type: integer, example: 202 }
+
   /taipei/api/dashboard/district-rankings:
     get:
+      summary: 行政區密度排名
       responses:
         '200':
           content:
@@ -294,10 +585,36 @@ paths:
                         type: array
                         items:
                           type: object
+                          required: [rank, district, total_count, density]
                           properties:
+                            rank: { type: integer }
                             district: { type: string }
-                            count: { type: integer }
-                            density: { type: number }
+                            total_count: { type: integer, description: 窄巷總條數 }
+                            density: { type: number, description: 窄巷密度（條/km²） }
+
+  /taipei/api/dashboard/hydrant-statistics:
+    get:
+      summary: 消防栓統計
+      parameters:
+        - name: district
+          in: query
+          schema: { type: string }
+          description: 行政區名稱（省略則回傳全市）
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    required: [total_count, density, service_radius]
+                    properties:
+                      total_count: { type: integer, example: 21870 }
+                      density: { type: number, description: 消防栓密度（個/km²）, example: 81.4 }
+                      service_radius: { type: integer, description: 理論服務半徑（公尺）, example: 63 }
 ```
 
 ### 資料來源
