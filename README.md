@@ -313,7 +313,7 @@ components:
 
     NarrowAlleyProperties:
       type: object
-      required: [id, alley_name, district, category, width_m]
+      required: [id, alley_name, district, category, width_m, risk_level]
       properties:
         id: { type: string }
         alley_name: { type: string }
@@ -323,12 +323,16 @@ components:
           enum: [紅區, 黃區]
           description: "消防局風險分類（如實呈現）"
         width_m: { type: number, description: 消防局實測寬度（公尺） }
+        risk_level:
+          type: string
+          enum: [極高風險, 高風險, 一般]
+          description: "後端依 width_m 計算：< 3.5m 極高風險 / 3.5–6m 高風險 / ≥ 6m 一般"
         road_width: { type: number, nullable: true, description: 對應計畫道路寬度（公尺） }
         snap_distance_m: { type: number, nullable: true, description: "Snapping 距離（公尺），> 50m 表示高度不確定性" }
 
     RoadPlannedProperties:
       type: object
-      required: [id, road_width, width_m, width_category]
+      required: [id, road_width, width_m, width_category, risk_level]
       properties:
         id: { type: string }
         road_width: { type: string, description: 原始計畫道路寬度標記 }
@@ -337,6 +341,10 @@ components:
           type: string
           enum: [narrow, mid, wide]
           description: "narrow < 3.5m / mid 3.5–6m / wide ≥ 6m"
+        risk_level:
+          type: string
+          enum: [極高風險, 高風險, 一般]
+          description: "後端依 width_m 計算：< 3.5m 極高風險 / 3.5–6m 高風險 / ≥ 6m 一般"
 
 paths:
   /taipei/api/fire-hydrants:
@@ -542,7 +550,7 @@ paths:
       summary: 窄巷統計
       description: |
         三類路段：
-        - planned：計畫道路 width_m < 6m
+        - planned：計畫道路 risk_level ≠ 一般（width_m < 6m）
         - overlap：計畫與實測雙重確認熱點
         - new_discovered：消防局實測但計畫圖資從未登錄的隱藏盲點
       parameters:
