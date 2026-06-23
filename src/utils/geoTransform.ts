@@ -19,7 +19,6 @@ import type {
   NarrowAlleyFeatureProps,
   RoadFeatureProps,
 } from '../types/geo'
-import { RISK_THRESHOLD_HIGH } from '../constants/riskThresholds'
 
 export function toHydrantFeatures(hydrants: FireHydrantFeatureProps[]): Feature[] {
   return hydrants.map(h => new Feature({
@@ -49,16 +48,17 @@ export function toNarrowAlleyFeatures(alleys: NarrowAlleyFeatureProps[]): Featur
     district:        alley.district,
     category:        alley.category,
     width_m:         alley.width_m,
+    risk_level:      alley.risk_level,
     road_width:      alley.road_width,
     snap_distance_m: alley.snap_distance_m,
     type: 'narrow_alley',
   }))
 }
 
-/** 僅保留 width_m < RISK_THRESHOLD_HIGH 的道路作為窄巷虛線底圖 */
+/** 僅保留後端判定非一般風險的道路作為窄巷虛線底圖 */
 export function toRoadFeatures(roads: RoadFeatureProps[]): Feature[] {
   return roads
-    .filter(r => r.width_m < RISK_THRESHOLD_HIGH)
+    .filter(r => r.risk_level !== '一般')
     .map(r => new Feature({
       geometry: new LineString(
         r.geometry.coordinates.map((c: number[]) => fromLonLat([c[0], c[1]]))
@@ -66,6 +66,7 @@ export function toRoadFeatures(roads: RoadFeatureProps[]): Feature[] {
       road_width:     r.road_width,
       width_m:        r.width_m,
       width_category: r.width_category,
+      risk_level:     r.risk_level,
       type: 'road',
     }))
 }

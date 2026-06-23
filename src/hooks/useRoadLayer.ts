@@ -7,7 +7,7 @@
  *
  * 架構分層:
  * - 資料擷取：useApi（含 race condition 保護）
- * - 座標轉換：geoTransform.ts（JSON → OL Feature，含 width_m < 6 篩選）
+ * - 座標轉換：geoTransform.ts（JSON → OL Feature，篩選條件依後端 risk_level 欄位）
  */
 
 import { useEffect, useRef, useCallback } from 'react'

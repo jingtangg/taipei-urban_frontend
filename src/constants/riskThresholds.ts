@@ -1,12 +1,11 @@
 /**
- * 窄巷風險分級門檻值
+ * 風險等級說明文字（前端顯示用）
  *
- * 依據消防法規定義：
- * - 極高風險：< 3.5m，消防車無法通行
- * - 高風險：3.5–6m，通行受限
- * - 一般：≥ 6m，正常通行
- *
- * 所有用到 3.5 / 6 的地方（樣式、popup、資料篩選）統一引用這裡
+ * 風險分級判斷邏輯（3.5m / 6m 閾值）已移至後端 BaseController::calculateRiskLevel()
+ * 前端僅負責將後端回傳的 risk_level 字串對應至 UI 說明文字
  */
-export const RISK_THRESHOLD_EXTREME = 3.5  // 極高風險上限 (m)
-export const RISK_THRESHOLD_HIGH    = 6    // 高風險上限 (m)
+export const RISK_DESC: Record<string, string> = {
+  '極高風險': '消防車無法通行',
+  '高風險':   '通行受限',
+  '一般':     '正常通行',
+}

@@ -21,7 +21,7 @@ import {
   WARN_DISTANCE_MID,
 } from '../constants/dataQualityThresholds'
 import type { PopupFeatureProps } from '../types/geo'
-import { getRiskInfo } from './riskUtils'
+import { RISK_DESC } from '../constants/riskThresholds'
 
 // ========== 警示徽章 HTML 字串 ==========
 const BADGE_BASE = `display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;border-radius:9999px;font-size:9px;font-weight:bold;vertical-align:middle`
@@ -97,28 +97,26 @@ type ClickableFeatureProps = Exclude<PopupFeatureProps, { type: 'district_marker
 export function resolveFeaturePopup(props: ClickableFeatureProps): string {
   switch (props.type) {
     case 'road': {
-      const { level, desc } = getRiskInfo(props.width_m)
       return createPopupHTML(
         COLOR_PRIMARY,
         `計畫路寬: ${props.width_m.toFixed(1)}M`,
         `
-          <p>> 風險等級: ${level}</p>
-          <p>> 風險描述: ${desc}</p>
+          <p>> 風險等級: ${props.risk_level}</p>
+          <p>> 風險描述: ${RISK_DESC[props.risk_level] ?? '未知'}</p>
           <p>> 資料來源: 都市計畫道路</p>
         `
       )
     }
     case 'narrow_alley': {
-      const { width_m, road_width, snap_distance_m, alley_name, category } = props
-      const { level, desc } = getRiskInfo(width_m)
+      const { width_m, risk_level, road_width, snap_distance_m, alley_name, category } = props
       const warningText   = buildWarningHTML(road_width, width_m, snap_distance_m)
       const widthDiffText = road_width ? (road_width - width_m).toFixed(1) + 'm' : '未有計畫值，待確認'
       return createPopupHTML(
         COLOR_PRIMARY,
         `實際路寬: ${width_m.toFixed(1)}M ] ${alley_name || '未知巷道'}`,
         `
-          <p>> 風險等級: ${level}</p>
-          <p>> 風險描述: ${desc}</p>
+          <p>> 風險等級: ${risk_level}</p>
+          <p>> 風險描述: ${RISK_DESC[risk_level] ?? '未知'}</p>
           <p>> 計畫路寬: ${road_width ? road_width.toFixed(1) + 'M' : '未知'}</p>
           <p>> 路寬差異: ${widthDiffText}</p>
           <p>> 消防局分類: ${category}</p>

@@ -34,6 +34,7 @@ export interface RoadFeatureProps {
   road_width: string                          // 原始計畫路寬字串，如 "8M"
   width_m: number                             // 解析後的數值，如 8.0
   width_category: 'narrow' | 'mid' | 'wide'  // 寬度分級
+  risk_level: string                          // 風險等級：後端依 3.5/6m 計算（極高風險／高風險／一般）
   geometry: GeoJSONLineString
 }
 
@@ -47,6 +48,7 @@ export interface NarrowAlleyFeatureProps {
   district: string                  // 行政區
   category: string                  // 消防局分類（紅區/黃區）
   width_m: number                   // 實際寬度
+  risk_level: string                // 風險等級：後端依 3.5/6m 計算（極高風險／高風險／一般）
   road_width: number | null         // 都市計畫寬度
   snap_distance_m: number | null    // 吸附距離
   geometry: GeoJSONLineString
@@ -83,8 +85,8 @@ export interface FireStationFeatureProps {
 
 export type PopupFeatureProps =
   | { type: 'district_marker'; name: string }
-  | { type: 'road';            width_m: number }
-  | { type: 'narrow_alley';   width_m: number; road_width: number | null; snap_distance_m: number | null; alley_name: string; category: string }
+  | { type: 'road';            width_m: number; risk_level: string }
+  | { type: 'narrow_alley';   width_m: number; risk_level: string; road_width: number | null; snap_distance_m: number | null; alley_name: string; category: string }
   | { type: 'hydrant';         hydrant_type: 'aboveground' | 'underground'; district: string }
   | { type: 'station';         name: string; address: string }
 
