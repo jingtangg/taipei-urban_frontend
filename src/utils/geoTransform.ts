@@ -16,6 +16,7 @@ import { fromLonLat } from 'ol/proj'
 import type {
   FireHydrantFeatureProps,
   FireStationFeatureProps,
+  HualienNarrowAlleyFeatureProps,
   NarrowAlleyFeatureProps,
   RoadFeatureProps,
 } from '../types/geo'
@@ -52,6 +53,23 @@ export function toNarrowAlleyFeatures(alleys: NarrowAlleyFeatureProps[]): Featur
     road_width:      alley.road_width,
     snap_distance_m: alley.snap_distance_m,
     type: 'narrow_alley',
+  }))
+}
+
+export function toHualienAlleyFeatures(alleys: HualienNarrowAlleyFeatureProps[]): Feature[] {
+  return alleys.map(a => new Feature({
+    geometry: new LineString(
+      a.geometry.coordinates.map((c: number[]) => fromLonLat([c[0], c[1]]))
+    ),
+    id:              a.id,
+    alley_name:      a.alley_name,
+    township:        a.township,
+    fire_station:    a.fire_station,
+    width_m_min:     a.width_m_min,
+    width_m_max:     a.width_m_max,
+    risk_level:      a.risk_level,
+    snap_distance_m: a.snap_distance_m,
+    type: 'hualien_alley',
   }))
 }
 

@@ -79,6 +79,23 @@ export interface FireStationFeatureProps {
   geometry: GeoJSONPoint
 }
 
+/**
+ * 花蓮縣窄巷圖徵屬性
+ * 對應後端 hualien_narrow_alleys 資料表
+ * 差異：無 category、無 road_width；width_m 拆為 min/max
+ */
+export interface HualienNarrowAlleyFeatureProps {
+  id: string
+  alley_name: string
+  township: string                  // 鄉鎮市區
+  fire_station: string | null
+  width_m_min: number
+  width_m_max: number
+  risk_level: string                // 極高風險 / 高風險 / 一般
+  snap_distance_m: number | null
+  geometry: GeoJSONLineString
+}
+
 // ════════════════════════════════════════════════════════════
 // Popup 屬性 — OL getProperties() 邊界的型別包層
 // ════════════════════════════════════════════════════════════

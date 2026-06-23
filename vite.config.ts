@@ -16,9 +16,11 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
+      historyApiFallback: {
+        // /hualien 及其子路徑都回 index.html，讓前端 App.tsx 分流
+        rewrites: [{ from: /^\/hualien(\/.*)?$/, to: '/index.html' }],
+      },
     },
   };
 });
