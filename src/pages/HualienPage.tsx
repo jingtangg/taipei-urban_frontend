@@ -10,12 +10,6 @@ import { useHualienAlleyLayer } from '../hooks/useHualienAlleyLayer'
 import { createPopupHTML } from '../utils/popupUtils'
 import { COLOR_PRIMARY, COLOR_DANGER, COLOR_WARNING } from '../constants/colors'
 
-const TOWNSHIPS = [
-  '', '花蓮市', '鳳林鎮', '玉里鎮',
-  '新城鄉', '秀林鄉', '吉安鄉', '壽豐鄉',
-  '光復鄉', '瑞穗鄉', '富里鄉', '卓溪鄉', '萬榮鄉', '豐濱鄉',
-]
-
 const RISK_COLOR: Record<string, string> = {
   '極高風險': COLOR_DANGER,
   '高風險':   COLOR_WARNING,
@@ -54,8 +48,7 @@ export default function HualienPage() {
   const popupRef     = useRef<HTMLDivElement>(null)
   const overlayRef   = useRef<Overlay | null>(null)
 
-  const [township, setTownship] = useState('')
-  const [coords, setCoords]     = useState<{ lat: number; lng: number } | null>(null)
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
 
   const onMouseMove = useCallback((c: { x: number; y: number }) => {
     const [lng, lat] = toLonLat([c.x, c.y])
@@ -63,7 +56,7 @@ export default function HualienPage() {
   }, [])
 
   const mapRef = useHualienMapInit(containerRef, onMouseMove)
-  const { loading, error } = useHualienAlleyLayer(mapRef.current, township)
+  const { loading, error } = useHualienAlleyLayer(mapRef.current, '')
 
   // Popup overlay 初始化
   useEffect(() => {
@@ -123,17 +116,6 @@ export default function HualienPage() {
         <h1 className="font-mono text-[#00ff41] text-sm tracking-widest">
           花蓮縣｜窄巷防災地圖
         </h1>
-
-        {/* 鄉鎮市區選單 */}
-        <select
-          value={township}
-          onChange={e => setTownship(e.target.value)}
-          className="font-mono text-xs bg-black border border-[#00ff41]/40 text-[#00ff41] px-2 py-1 rounded focus:outline-none focus:border-[#00ff41]"
-        >
-          {TOWNSHIPS.map(t => (
-            <option key={t} value={t}>{t === '' ? '全縣' : t}</option>
-          ))}
-        </select>
 
         {/* 載入狀態 */}
         {loading && (

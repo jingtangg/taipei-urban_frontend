@@ -56,21 +56,39 @@ export function toNarrowAlleyFeatures(alleys: NarrowAlleyFeatureProps[]): Featur
   }))
 }
 
+function perpendicularLine(coords: number[][], widthM: number): number[][] {
+  const start = coords[0]
+  const end = coords[coords.length - 1]
+  const mid = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2]
+  const dx = end[0] - start[0]
+  const dy = end[1] - start[1]
+  const len = Math.sqrt(dx * dx + dy * dy)
+  if (len === 0) return coords
+  const px = -dy / len
+  const py = dx / len
+  const half = widthM / 2
+  return [
+    [mid[0] - px * half, mid[1] - py * half],
+    [mid[0] + px * half, mid[1] + py * half],
+  ]
+}
+
 export function toHualienAlleyFeatures(alleys: HualienNarrowAlleyFeatureProps[]): Feature[] {
-  return alleys.map(a => new Feature({
-    geometry: new LineString(
-      a.geometry.coordinates.map((c: number[]) => fromLonLat([c[0], c[1]]))
-    ),
-    id:              a.id,
-    alley_name:      a.alley_name,
-    township:        a.township,
-    fire_station:    a.fire_station,
-    width_m_min:     a.width_m_min,
-    width_m_max:     a.width_m_max,
-    risk_level:      a.risk_level,
-    snap_distance_m: a.snap_distance_m,
-    type: 'hualien_alley',
-  }))
+  return alleys.map(a => {
+    const projected = a.geometry.coordinates.map((c: number[]) => fromLonLat([c[0], c[1]]))
+    return new Feature({
+      geometry: new LineString(perpendicularLine(projected, a.width_m_min)),
+      id:              a.id,
+      alley_name:      a.alley_name,
+      township:        a.township,
+      fire_station:    a.fire_station,
+      width_m_min:     a.width_m_min,
+      width_m_max:     a.width_m_max,
+      risk_level:      a.risk_level,
+      snap_distance_m: a.snap_distance_m,
+      type: 'hualien_alley',
+    })
+  })
 }
 
 /** 僅保留後端判定非一般風險的道路作為窄巷虛線底圖 */

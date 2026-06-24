@@ -13,11 +13,15 @@ import type { FeatureLike } from 'ol/Feature'
  * 消防局實測窄巷樣式（實線）
  * - 極高風險：紅色
  * - 高風險：黃色
+ * - 一般（花蓮 >= 6M 仍列管）：暗橘色
  */
 export function narrowAlleyStyle(feature: FeatureLike): Style[] {
-  const color = feature.get('risk_level') === '極高風險'
+  const risk = feature.get('risk_level')
+  const color = risk === '極高風險'
     ? 'rgba(252, 33, 33, 0.94)'
-    : 'rgba(255, 170, 0, 0.92)'
+    : risk === '高風險'
+      ? 'rgba(255, 170, 0, 0.92)'
+      : 'rgba(180, 100, 20, 0.85)'
   return [
     new Style({ stroke: new Stroke({ color: 'rgba(8, 12, 10, 0.62)', width: 4.2 }) }),
     new Style({ stroke: new Stroke({ color, width: 3 }) }),

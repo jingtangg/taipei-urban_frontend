@@ -20,11 +20,9 @@ const hualienClient = axios.create({
  */
 export async function getHualienNarrowAlleys(
   township?: string,
-  signal?: AbortSignal,
 ): Promise<HualienNarrowAlleyFeatureProps[]> {
   const resp = await hualienClient.get('/narrow-alleys', {
     params: township ? { township } : {},
-    signal,
   })
 
   const resData = resp.data
