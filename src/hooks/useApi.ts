@@ -29,8 +29,12 @@ export function useApi<T>(
     setError(null)
     queryFn()
       .then(result  => { if (!cancelled) setData(result) })
-      .catch(err    => { if (!cancelled) setError(err?.message ?? '請求失敗') })
-      .finally(()   => { if (!cancelled) setLoading(false) })
+      .catch(err    => {
+        if (!cancelled) {
+          console.error('[useApi] query failed:', err)
+          setError('請求失敗，請稍後再試')
+        }
+      })      .finally(()   => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [queryFn])
 
